@@ -27,6 +27,7 @@ using namespace elem::unit_or_non_unit_wrapper;
 using namespace elem::upper_or_lower_wrapper;
 
 // For scalar operations
+using elem::Int;
 using elem::Base;
 using elem::Complex;
 using elem::Abs;

@@ -29,9 +29,9 @@ endif()
 # Create the RT-MRI configuration header
 configure_file( 
   ${PROJECT_SOURCE_DIR}/cmake/config.h.cmake
-  ${PROJECT_BINARY_DIR}/include/RT-MRI/config.h)
-install(FILES ${PROJECT_BINARY_DIR}/include/RT-MRI/config.h 
-  DESTINATION include/RT-MRI)
+  ${PROJECT_BINARY_DIR}/include/rt-mri/config.h)
+install(FILES ${PROJECT_BINARY_DIR}/include/rt-mri/config.h 
+  DESTINATION include/rt-mri)
 
 # TODO: rtmrivariables Makefile include
 
@@ -44,12 +44,11 @@ set(RTMRI_SRC "${RTMRI_CPP};${RTMRI_HEADERS}")
 # The main library
 add_library(rtmri ${LIBRARY_TYPE} ${RTMRI_SRC})
 target_link_libraries(rtmri elemental)
-endif()
 install(TARGETS rtmri DESTINATION lib)
 
 # Define the header-file preparation rules
 set(PREPARED_HEADERS)
-foreach(HEADER ${CLIQUE_HEADERS})
+foreach(HEADER ${RTMRI_HEADERS})
   add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/${HEADER}
     COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/${HEADER}
             ${PROJECT_BINARY_DIR}/${HEADER}
