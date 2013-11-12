@@ -24,7 +24,17 @@ if(HAVE_QT5)
   add_definitions(${Qt5Widgets_DEFINITIONS})
 endif()
 
-# TODO: Test for libnfft3.a
+# Test whether or not MATH_LIBS contains NFFT3 (and FFTW3?)
+include(CheckFunctionExists)
+set(CMAKE_REQUIRED_LIBRARIES ${MATH_LIBS})
+check_function_exists(fftw_execute HAVE_FFTW_EXECUTE)
+check_function_exists(nfft_trafo HAVE_NFFT_TRAFO)
+if(NOT HAVE_FFTW_EXECUTE)
+  message(FATAL_ERROR "MATH_LIBS did not contain FFTW3")
+endif()
+if(NOT HAVE_NFFT_TRAFO)
+  message(FATAL_ERROR "MATH_LIBS did not contain NFFT3")
+endif()
 
 # Create the RT-MRI configuration header
 configure_file( 
