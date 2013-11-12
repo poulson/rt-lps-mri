@@ -23,8 +23,8 @@ void PrintVersion( std::ostream& os )
 {
     os << "RT-LPS-MRI version information:\n"
        << "  Git revision: " << GIT_SHA1 << "\n"
-       << "  Version:      " << RTMRI_VERSION_MAJOR << "."
-                             << RTMRI_VERSION_MINOR << "\n"
+       << "  Version:      " << RTLPSMRI_VERSION_MAJOR << "."
+                             << RTLPSMRI_VERSION_MINOR << "\n"
        << "  Build type:   " << CMAKE_BUILD_TYPE << "\n"
        << std::endl;
 }

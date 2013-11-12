@@ -96,9 +96,9 @@ add_dependencies(rtlpsmri prepare_rtlpsmri_headers)
 include_directories("${PROJECT_BINARY_DIR}/include")
 
 # Build the test drivers if necessary
-if(CLIQ_TESTS)
+if(RTLPSMRI_TESTS)
   set(TEST_DIR ${PROJECT_SOURCE_DIR}/tests)
-  set(TESTS)
+  set(TESTS NFFT)
 
   # Build the tests
   set(OUTPUT_DIR "${PROJECT_BINARY_DIR}/bin/tests")
