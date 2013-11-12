@@ -36,6 +36,27 @@ if(NOT HAVE_NFFT_TRAFO)
   message(FATAL_ERROR "MATH_LIBS did not contain NFFT3")
 endif()
 
+# Check if the include directories work for NFFT
+set(NFFT_CODE
+    "#include \"nfft3.h\"
+     int main()
+     {
+       nfft_plan p;
+       nfft_init_guru(&p, 2, NULL, 5, NULL, 2, 0, 0);
+       nfft_precompute_one_psi(&p);
+       nfft_trafo_2d(&p);
+       nfft_adjoint_2d(&p);
+       nfft_finalize(&p);
+       return 0;
+     }")
+set(CMAKE_REQUIRED_INCLUDES ${NFFT_INC_DIR})
+set(CMAKE_REQUIRED_LIBRARIES ${MATH_LIBS})
+check_cxx_source_compiles("${NFFT_CODE}" HAVE_NFFT_COMPILE)
+if(NOT HAVE_NFFT_COMPILE)
+  message(FATAL_ERROR "Could not compile NFFT program using NFFT_INC_DIR=${NFFT_INC_DIR} and MATH_LIBS=${MATH_LIBS}")
+endif()
+include_directories(${NFFT_INC_DIR})
+
 # Create the RT-MRI configuration header
 configure_file( 
   ${PROJECT_SOURCE_DIR}/cmake/config.h.cmake

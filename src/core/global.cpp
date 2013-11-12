@@ -32,7 +32,7 @@ void PrintVersion( std::ostream& os )
 void PrintConfig( std::ostream& os )
 {
     os << "RT-MRI configuration:\n";
-    // TODO: Custom options
+    os << "  NFFT_INC_DIR: " << NFFT_INC_DIR << "\n";
     elem::PrintConfig( os );
 }
 

@@ -19,6 +19,7 @@ main( int argc, char* argv[] )
     if( commRank == 0 )
     {
         PrintVersion();
+        PrintConfig();
         PrintCCompilerInfo();
         PrintCxxCompilerInfo();
     }

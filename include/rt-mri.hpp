@@ -12,6 +12,8 @@
 // TODO: Replace with elemental-lite.hpp and supporting routines
 #include "elemental.hpp"
 
+#include "nfft3.h"
+
 #include "rt-mri/config.h"
 
 //
