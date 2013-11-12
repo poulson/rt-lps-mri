@@ -22,5 +22,6 @@
 
 #include "rt-mri/core/environment_decl.hpp"
 #include "rt-mri/core/environment_impl.hpp"
+#include "rt-mri/core/nfft.hpp"
 
 #endif // ifndef RTMRI_HPP

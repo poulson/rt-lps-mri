@@ -44,6 +44,9 @@ using elem::LockedView;
 using elem::Shift;
 using elem::Length;
 
+using elem::LogicError;
+using elem::RuntimeError;
+
 void PrintVersion( std::ostream& os=std::cout );
 void PrintConfig( std::ostream& os=std::cout );
 void PrintCCompilerInfo( std::ostream& os=std::cout );
