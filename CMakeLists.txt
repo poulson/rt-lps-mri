@@ -2,18 +2,18 @@
 #  Copyright (c) 2013, Jack Poulson, Ricardo Otazo, and Emmanuel Candes
 #  All rights reserved.
 #
-#  This file is part of RealTime-MRI and is under the BSD 2-Clause License, 
-#  which can be found in the LICENSE file in the root directory, or at 
-#  http://opensource.org/licenses/BSD-2-Clause
+#  This file is part of Real-Time Low-rank Plus Sparse MRI (RT-LPS-MRI) and is 
+#  under the BSD 2-Clause License, which can be found in the LICENSE file in the
+#  root directory, or at http://opensource.org/licenses/BSD-2-Clause
 #
 cmake_minimum_required(VERSION 2.8.8) 
-project(RT-MRI)
+project(RT-LPS-MRI)
 
-set(RTMRI_VERSION_MAJOR 0)
-set(RTMRI_VERSION_MINOR 1)
+set(RTLPSMRI_VERSION_MAJOR 0)
+set(RTLPSMRI_VERSION_MINOR 1)
 
-option(RTMRI_TESTS "Build a collection of test executables" ON)
-option(RTMRI_EXAMPLES "Build a few example drivers" ON)
+option(RTLPSMRI_TESTS "Build a collection of test executables" ON)
+option(RTLPSMRI_EXAMPLES "Build a few example drivers" ON)
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/external/elemental)
 include_directories(${PROJECT_BINARY_DIR}/external/elemental/include)
@@ -57,29 +57,29 @@ if(NOT HAVE_NFFT_COMPILE)
 endif()
 include_directories(${NFFT_INC_DIR})
 
-# Create the RT-MRI configuration header
+# Create the RT-LPS-MRI configuration header
 configure_file( 
   ${PROJECT_SOURCE_DIR}/cmake/config.h.cmake
-  ${PROJECT_BINARY_DIR}/include/rt-mri/config.h)
-install(FILES ${PROJECT_BINARY_DIR}/include/rt-mri/config.h 
-  DESTINATION include/rt-mri)
+  ${PROJECT_BINARY_DIR}/include/rt-lps-mri/config.h)
+install(FILES ${PROJECT_BINARY_DIR}/include/rt-lps-mri/config.h 
+  DESTINATION include/rt-lps-mri)
 
 # TODO: rtmrivariables Makefile include
 
-# Grab all of the .c, .cpp, .h, and .hpp RT-MRI files
-file(GLOB_RECURSE RTMRI_CPP RELATIVE ${PROJECT_SOURCE_DIR} "src/*.cpp")
-file(GLOB_RECURSE RTMRI_HEADERS RELATIVE ${PROJECT_SOURCE_DIR} 
+# Grab all of the .c, .cpp, .h, and .hpp RT-LPS-MRI files
+file(GLOB_RECURSE RTLPSMRI_CPP RELATIVE ${PROJECT_SOURCE_DIR} "src/*.cpp")
+file(GLOB_RECURSE RTLPSMRI_HEADERS RELATIVE ${PROJECT_SOURCE_DIR} 
   "include/*.h" "include/*.hpp")
-set(RTMRI_SRC "${RTMRI_CPP};${RTMRI_HEADERS}")
+set(RTLPSMRI_SRC "${RTLPSMRI_CPP};${RTLPSMRI_HEADERS}")
 
 # The main library
-add_library(rtmri ${LIBRARY_TYPE} ${RTMRI_SRC})
-target_link_libraries(rtmri elemental)
-install(TARGETS rtmri DESTINATION lib)
+add_library(rtlpsmri ${LIBRARY_TYPE} ${RTLPSMRI_SRC})
+target_link_libraries(rtlpsmri elemental)
+install(TARGETS rtlpsmri DESTINATION lib)
 
 # Define the header-file preparation rules
 set(PREPARED_HEADERS)
-foreach(HEADER ${RTMRI_HEADERS})
+foreach(HEADER ${RTLPSMRI_HEADERS})
   add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/${HEADER}
     COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/${HEADER}
             ${PROJECT_BINARY_DIR}/${HEADER}
@@ -89,10 +89,10 @@ foreach(HEADER ${RTMRI_HEADERS})
   get_filename_component(HEADER_PATH ${HEADER} PATH)
   install(FILES ${PROJECT_BINARY_DIR}/${HEADER} DESTINATION ${HEADER_PATH})
 endforeach()
-add_custom_target(prepare_rtmri_headers DEPENDS ${PREPARED_HEADERS})
-add_dependencies(rtmri prepare_rtmri_headers)
+add_custom_target(prepare_rtlpsmri_headers DEPENDS ${PREPARED_HEADERS})
+add_dependencies(rtlpsmri prepare_rtlpsmri_headers)
 
-# Make sure the RT-MRI headers can be found
+# Make sure the RT-LPS-MRI headers can be found
 include_directories("${PROJECT_BINARY_DIR}/include")
 
 # Build the test drivers if necessary
@@ -104,7 +104,7 @@ if(CLIQ_TESTS)
   set(OUTPUT_DIR "${PROJECT_BINARY_DIR}/bin/tests")
   foreach(TEST ${TESTS})
     add_executable(tests-${TEST} ${TEST_DIR}/${TEST}.cpp)
-    target_link_libraries(tests-${TEST} rtmri)
+    target_link_libraries(tests-${TEST} rtlpsmri)
     set_target_properties(tests-${TEST} PROPERTIES
       OUTPUT_NAME ${TEST} RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_DIR})
     if(MPI_LINK_FLAGS)
@@ -116,7 +116,7 @@ if(CLIQ_TESTS)
 endif()
 
 # Build the example drivers if necessary
-if(RTMRI_EXAMPLES)
+if(RTLPSMRI_EXAMPLES)
   set(EXAMPLE_DIR ${PROJECT_SOURCE_DIR}/examples)
   set(EXAMPLES Version)
 
@@ -124,7 +124,7 @@ if(RTMRI_EXAMPLES)
   set(OUTPUT_DIR "${PROJECT_BINARY_DIR}/bin/examples")
   foreach(EXAMPLE ${EXAMPLES})
     add_executable(examples-${EXAMPLE} ${EXAMPLE_DIR}/${EXAMPLE}.cpp)
-    target_link_libraries(examples-${EXAMPLE} rtmri)
+    target_link_libraries(examples-${EXAMPLE} rtlpsmri)
     set_target_properties(examples-${EXAMPLE} PROPERTIES
       OUTPUT_NAME ${EXAMPLE} RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_DIR})
     if(MPI_LINK_FLAGS)
@@ -135,7 +135,7 @@ if(RTMRI_EXAMPLES)
   endforeach()
 endif()
 
-# If RT-MRI is a subproject, then pass some variables to the parent
+# If RT-LPS-MRI is a subproject, then pass some variables to the parent
 if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-  include(./cmake/rtmri_sub.cmake)
+  include(./cmake/rtlpsmri_sub.cmake)
 endif()

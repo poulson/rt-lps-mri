@@ -1,15 +1,15 @@
 /*
    Copyright (c) 2013, Jack Poulson, Ricardo Otazo, and Emmanuel Candes
    All rights reserved.
-
-   This file is part of RealTime-MRI and is under the BSD 2-Clause License, 
-   which can be found in the LICENSE file in the root directory, or at 
-   http://opensource.org/licenses/BSD-2-Clause
+ 
+   This file is part of Real-Time Low-rank Plus Sparse MRI (RT-LPS-MRI) and is 
+   under the BSD 2-Clause License, which can be found in the LICENSE file in the
+   root directory, or at http://opensource.org/licenses/BSD-2-Clause
 */
-#ifndef RTMRI_CORE_NFFT_HPP
-#define RTMRI_CORE_NFFT_HPP
+#ifndef RTLPSMRI_CORE_NFFT_HPP
+#define RTLPSMRI_CORE_NFFT_HPP
 
-namespace rtmri {
+namespace mri {
 
 // TODO: Decide whether or not it is worthwhile to reuse plans. At worst, we
 //       would need one plan per coil.
@@ -110,6 +110,6 @@ AdjointNFFT2D
     }
 }
 
-} // namespace rtmri
+} // namespace mri
 
-#endif // ifndef RTMRI_CORE_NFFT_HPP
+#endif // ifndef RTLPSMRI_CORE_NFFT_HPP

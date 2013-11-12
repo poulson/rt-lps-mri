@@ -1,0 +1,5 @@
+The library is currently being configured with:
+    cmake -D CMAKE_BUILD_TYPE=PureDebug -D MATH_LIBS="/home/poulson/Install/lib/libopenblas.a;/home/poulson/Install/lib/libnfft3.a;-lfftw3;-lgfortran;-lm;-lpthread" -D CXX_FLAGS="-Wall -std=c++11" -D NFFT_INC_DIR=/home/poulson/Install/include ..
+
+Much more detailed instructions will follow once more functionality is 
+available.

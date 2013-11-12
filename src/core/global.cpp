@@ -1,27 +1,27 @@
 /*
    Copyright (c) 2013, Jack Poulson, Ricardo Otazo, and Emmanuel Candes
    All rights reserved.
-
-   This file is part of RealTime-MRI and is under the BSD 2-Clause License, 
-   which can be found in the LICENSE file in the root directory, or at 
-   http://opensource.org/licenses/BSD-2-Clause
+ 
+   This file is part of Real-Time Low-rank Plus Sparse MRI (RT-LPS-MRI) and is 
+   under the BSD 2-Clause License, which can be found in the LICENSE file in the
+   root directory, or at http://opensource.org/licenses/BSD-2-Clause
 */
-#include "rt-mri.hpp"
+#include "rt-lps-mri.hpp"
 
 namespace { 
-bool rtmriInitializedElemental; 
-int numRtmriInits = 0;
-rtmri::Args* args = 0;
+bool mriInitializedElemental; 
+int numMriInits = 0;
+mri::Args* args = 0;
 #ifndef RELEASE
 std::stack<std::string> callStack;
 #endif
 }
 
-namespace rtmri {
+namespace mri {
 
 void PrintVersion( std::ostream& os )
 {
-    os << "RT-MRI version information:\n"
+    os << "RT-LPS-MRI version information:\n"
        << "  Git revision: " << GIT_SHA1 << "\n"
        << "  Version:      " << RTMRI_VERSION_MAJOR << "."
                              << RTMRI_VERSION_MINOR << "\n"
@@ -31,14 +31,14 @@ void PrintVersion( std::ostream& os )
 
 void PrintConfig( std::ostream& os )
 {
-    os << "RT-MRI configuration:\n";
+    os << "RT-LPS-MRI configuration:\n";
     os << "  NFFT_INC_DIR: " << NFFT_INC_DIR << "\n";
     elem::PrintConfig( os );
 }
 
 void PrintCCompilerInfo( std::ostream& os )
 {
-    os << "RT-MRI's C compiler info:\n"
+    os << "RT-LPS-MRI's C compiler info:\n"
        << "  CMAKE_C_COMPILER:    " << CMAKE_C_COMPILER << "\n"
        << "  MPI_C_COMPILER:      " << MPI_C_COMPILER << "\n"
        << "  MPI_C_INCLUDE_PATH:  " << MPI_C_INCLUDE_PATH << "\n"
@@ -50,7 +50,7 @@ void PrintCCompilerInfo( std::ostream& os )
 
 void PrintCxxCompilerInfo( std::ostream& os )
 {
-    os << "RT-MRI's C++ compiler info:\n"
+    os << "RT-LPS-MRI's C++ compiler info:\n"
        << "  CMAKE_CXX_COMPILER:    " << CMAKE_CXX_COMPILER << "\n"
        << "  CXX_FLAGS:             " << CXX_FLAGS << "\n"
        << "  MPI_CXX_COMPILER:      " << MPI_CXX_COMPILER << "\n"
@@ -62,39 +62,39 @@ void PrintCxxCompilerInfo( std::ostream& os )
 }
 
 bool Initialized()
-{ return ::numRtmriInits > 0; }
+{ return ::numMriInits > 0; }
 
 void Initialize( int& argc, char**& argv )
 {
-    // If RT-MRI has already been initialized, this is a no-op
-    if( ::numRtmriInits > 0 )
+    // If RT-LPS-MRI has already been initialized, this is a no-op
+    if( ::numMriInits > 0 )
     {
-        ++::numRtmriInits;
+        ++::numMriInits;
         return;
     }
 
     ::args = new Args( argc, argv );
-    ::numRtmriInits = 1;
+    ::numMriInits = 1;
     if( !elem::Initialized() )
     {
         elem::Initialize( argc, argv );
-        ::rtmriInitializedElemental = true;
+        ::mriInitializedElemental = true;
     }
     else
     {
-        ::rtmriInitializedElemental = false;
+        ::mriInitializedElemental = false;
     }
 }
 
 void Finalize()
 {
-    if( ::numRtmriInits <= 0 )
-        throw std::logic_error("Finalized RT-MRI more than initialized");
-    --::numRtmriInits;
-    if( ::rtmriInitializedElemental )
+    if( ::numMriInits <= 0 )
+        throw std::logic_error("Finalized RT-LPS-MRI more than initialized");
+    --::numMriInits;
+    if( ::mriInitializedElemental )
         elem::Finalize();
 
-    if( ::numRtmriInits == 0 )
+    if( ::numMriInits == 0 )
     {
         delete ::args;    
         ::args = 0;
@@ -136,4 +136,4 @@ Args& GetArgs()
     return *::args;
 }
 
-} // namespace rtmri
+} // namespace mri

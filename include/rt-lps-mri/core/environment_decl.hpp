@@ -1,16 +1,15 @@
 /*
    Copyright (c) 2013, Jack Poulson, Ricardo Otazo, and Emmanuel Candes
    All rights reserved.
-
-   This file is part of RealTime-MRI and is under the BSD 2-Clause License, 
-   which can be found in the LICENSE file in the root directory, or at 
-   http://opensource.org/licenses/BSD-2-Clause
+ 
+   This file is part of Real-Time Low-rank Plus Sparse MRI (RT-LPS-MRI) and is 
+   under the BSD 2-Clause License, which can be found in the LICENSE file in the   root directory, or at http://opensource.org/licenses/BSD-2-Clause
 */
 #pragma once
-#ifndef RTMRI_CORE_ENVIRONMENT_DECL_HPP
-#define RTMRI_CORE_ENVIRONMENT_DECL_HPP
+#ifndef RTLPSMRI_CORE_ENVIRONMENT_DECL_HPP
+#define RTLPSMRI_CORE_ENVIRONMENT_DECL_HPP
 
-namespace rtmri {
+namespace mri {
 
 typedef unsigned char byte;
 
@@ -103,6 +102,6 @@ public:
 
 void ReportException( std::exception& e );
 
-} // namespace rtmri
+} // namespace mri
 
-#endif // ifndef RTMRI_CORE_ENVIRONMENT_DECL_HPP
+#endif // ifndef RTLPSMRI_CORE_ENVIRONMENT_DECL_HPP
