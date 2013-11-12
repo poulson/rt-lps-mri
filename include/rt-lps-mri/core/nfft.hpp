@@ -16,14 +16,12 @@ namespace mri {
 
 // TODO: Decide how to multithread embarrassingly parallel local transforms
 
-// TODO: Re-enable const inputs where possible after verifying correct answers
-
 inline void
 NFFT2D
 ( int N1, int N2, int M, int n1, int n2, int m, 
-  DistMatrix<Complex<double>,STAR,VR>& FHat, 
-  DistMatrix<double,         STAR,VR>& X,
-  DistMatrix<Complex<double>,STAR,VR>& F )
+  const DistMatrix<Complex<double>,STAR,VR>& FHat, 
+  const DistMatrix<double,         STAR,VR>& X,
+        DistMatrix<Complex<double>,STAR,VR>& F )
 {
 #ifndef RELEASE
     CallStackEntry cse("NFFT2D");
@@ -56,9 +54,10 @@ NFFT2D
 #ifndef RELEASE
         // TODO: Ensure this column of X is sorted
 #endif
-        p.x = X.Buffer(0,jLoc);
+        p.x = const_cast<double*>(X.LockedBuffer(0,jLoc));
+        p.f_hat = (fftw_complex*)
+            const_cast<Complex<double>*>(FHat.LockedBuffer(0,jLoc));
         p.f = (fftw_complex*)F.Buffer(0,jLoc);
-        p.f_hat = (fftw_complex*)FHat.Buffer(0,jLoc);
         nfft_init_guru( &p, d, NN, M, nn, m, nfftFlags, fftwFlags );
         if( p.nfft_flags & PRE_ONE_PSI )
             nfft_precompute_one_psi( &p );  // TODO: See if this can be hoisted
@@ -70,9 +69,9 @@ NFFT2D
 inline void
 AdjointNFFT2D
 ( int N1, int N2, int M, int n1, int n2, int m,
-  DistMatrix<Complex<double>,STAR,VR>& FHat,
-  DistMatrix<double,         STAR,VR>& X,
-  DistMatrix<Complex<double>,STAR,VR>& F )
+        DistMatrix<Complex<double>,STAR,VR>& FHat,
+  const DistMatrix<double,         STAR,VR>& X,
+  const DistMatrix<Complex<double>,STAR,VR>& F )
 {
 #ifndef RELEASE
     CallStackEntry cse("NFFT2D");
@@ -105,8 +104,9 @@ AdjointNFFT2D
 #ifndef RELEASE
         // TODO: Ensure this column of X is sorted
 #endif
-        p.x = X.Buffer(0,jLoc);
-        p.f = (fftw_complex*)F.Buffer(0,jLoc);
+        p.x = const_cast<double*>(X.LockedBuffer(0,jLoc));
+        p.f = (fftw_complex*)
+            const_cast<Complex<double>*>(F.LockedBuffer(0,jLoc));
         p.f_hat = (fftw_complex*)FHat.Buffer(0,jLoc);
         nfft_init_guru( &p, d, NN, M, nn, m, nfftFlags, fftwFlags );
         if( p.nfft_flags & PRE_ONE_PSI )

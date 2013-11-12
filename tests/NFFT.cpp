@@ -38,11 +38,9 @@ main( int argc, char* argv[] )
         Print( FHat, "FHat" );
 
         NFFT2D( N1, N2, M, n1, n2, m, FHat, X, F );
-
         Print( F, "F after forward" );
 
         AdjointNFFT2D( N1, N2, M, n1, n2, m, FHat, X, F );
-
         Print( FHat, "FHat after adjoint" );
     }
     catch( std::exception& e ) { ReportException(e); }
