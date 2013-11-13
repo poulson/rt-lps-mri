@@ -13,32 +13,33 @@ namespace mri {
 
 inline void
 CoilAwareNFT2D
-( const DistMatrix<int,            STAR,VR>& coils,
-  const DistMatrix<Complex<double>,STAR,VR>& FHat, 
+( const DistMatrix<Complex<double>,STAR,VR>& FHat, 
         DistMatrix<Complex<double>,STAR,VR>& F )
 {
 #ifndef RELEASE
     CallStackEntry cse("CoilAwareNFT2D");
 #endif
     const double pi = 4*elem::Atan( 1. );
-    const int width = coils.Width();
+    const int width = FHat.Width();
     const int M = NumNonUniformPoints();
     const int N0 = FirstBandwidth();
     const int N1 = SecondBandwidth();
 #ifndef RELEASE
+    const int nc = NumCoils();
+    const int nt = NumTimesteps();
+    if( width != nc*nt )
+        LogicError("Invalid width");
     if( FHat.Height() != N0*N1 )
         LogicError("Invalid FHat height");
-    if( FHat.Width() != width )
-        LogicError("FHat and coils must have the same width");
-    if( FHat.RowAlign() != coils.RowAlign() )
-        LogicError("FHat and coils are not aligned");
+    if( FHat.LocalWidth() != NumLocalPaths() )
+        LogicError("Invalid alignment");
 #endif
     F.AlignWith( FHat );
     Zeros( F, M, width );
     const int locWidth = F.LocalWidth();
     for( int jLoc=0; jLoc<locWidth; ++jLoc )
     {
-        nfft_plan& plan = CoilPlan( coils.GetLocal(0,jLoc) );
+        nfft_plan& plan = LocalCoilPlan( jLoc );
         const double* XCol = plan.x;
         Complex<double>* FCol = F.Buffer(0,jLoc);
         const Complex<double>* FHatCol = FHat.LockedBuffer(0,jLoc);
@@ -65,25 +66,26 @@ CoilAwareNFT2D
 
 inline void
 CoilAwareAdjointNFT2D
-( const DistMatrix<int,            STAR,VR>& coils,
-        DistMatrix<Complex<double>,STAR,VR>& FHat,
+(       DistMatrix<Complex<double>,STAR,VR>& FHat,
   const DistMatrix<Complex<double>,STAR,VR>& F )
 {
 #ifndef RELEASE
     CallStackEntry cse("CoilAwareAdjointNFT2D");
 #endif
     const double pi = 4*elem::Atan( 1. );
-    const int width = coils.Width();
+    const int width = F.Width();
     const int M = NumNonUniformPoints();
     const int N0 = FirstBandwidth();
     const int N1 = SecondBandwidth();
 #ifndef RELEASE
+    const int nc = NumCoils();
+    const int nt = NumTimesteps();
+    if( width != nc*nt )
+        LogicError("Invalid width");
     if( F.Height() != M )
         LogicError("Invalid F height");
-    if( F.Width() != width )
-        LogicError("F and coils must have the same width");
-    if( F.RowAlign() != coils.RowAlign() )
-        LogicError("F and coils are not aligned");
+    if( F.LocalWidth() != NumLocalPaths() )
+        LogicError("Invalid alignment");
 #endif
     FHat.AlignWith( F );
     Zeros( FHat, N0*N1, width );
@@ -91,7 +93,7 @@ CoilAwareAdjointNFT2D
 
     for( int jLoc=0; jLoc<locWidth; ++jLoc )
     {
-        nfft_plan& plan = CoilPlan( coils.GetLocal(0,jLoc) );
+        nfft_plan& plan = LocalCoilPlan( jLoc );
         const double* XCol = plan.x;
         const Complex<double>* FCol = F.LockedBuffer(0,jLoc);
         Complex<double>* FHatCol = FHat.Buffer(0,jLoc);

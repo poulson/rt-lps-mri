@@ -105,14 +105,18 @@ void ReportException( std::exception& e );
 
 bool InitializedCoilPlans();
 void InitializeCoilPlans
-( const Matrix<double>& X, int N0, int N1, int n0, int n1, int m );
+( const DistMatrix<double,STAR,VR>& X, int numCoils, int numTimesteps, 
+  int N0, int N1, int n0, int n1, int m );
 void FinalizeCoilPlans();
 
+int NumCoils();
+int NumTimesteps();
+int NumLocalPaths();
 int NumNonUniformPoints();
 int FirstBandwidth();
 int SecondBandwidth();
 
-nfft_plan& CoilPlan( int coil );
+nfft_plan& LocalCoilPlan( int localPath );
 
 } // namespace mri
 

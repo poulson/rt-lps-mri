@@ -17,11 +17,13 @@ std::stack<std::string> callStack;
 #endif
 
 bool initializedCoilPlans = false;
+int numCoils;
+int numTimesteps;
 int numNonUniformPoints;
 int firstBandwidth;
 int secondBandwidth;
-elem::Matrix<double>* coilPaths;
-std::vector<nfft_plan> coilPlans;
+elem::DistMatrix<double,elem::STAR,elem::VR>* coilPaths;
+std::vector<nfft_plan> localCoilPlans;
 }
 
 namespace mri {
@@ -148,18 +150,26 @@ Args& GetArgs()
 bool InitializedCoilPlans()
 { return ::initializedCoilPlans; }
 
+// All coil trajectories for each timestep are stored in subsequent columns, so 
+// that, for instance, the first 'numCoils' columns correspond to the first 
+// timestep.
 void InitializeCoilPlans
-( const Matrix<double>& X, int N0, int N1, int n0, int n1, int m )
+( const DistMatrix<double,STAR,VR>& X, int numCoils, int numTimesteps, 
+  int N0, int N1, int n0, int n1, int m )
 {
 #ifndef RELEASE
     CallStackEntry cse("InitializeCoilPlans");
     if( InitializedCoilPlans() )
         LogicError("Already initialized coil plans");
+    if( X.Width() != numCoils*numTimesteps )
+        LogicError("Wrong number of k-space paths provided");
 #endif
     const int d = 2;
-    const int M = X.Height();
-    const int numCoils = X.Width();
+    const int M = X.Height()/d;
+    const int numLocalPaths = X.LocalWidth();
 
+    ::numCoils = numCoils;
+    ::numTimesteps = numTimesteps;
     ::numNonUniformPoints = M;
     ::firstBandwidth = N0;
     ::secondBandwidth = N1;
@@ -167,20 +177,19 @@ void InitializeCoilPlans
 #ifndef RELEASE
     // TODO: Ensure that each column of X is sorted
 #endif
-    ::coilPaths = new Matrix<double>;
-    *::coilPaths = X;
+    ::coilPaths = new DistMatrix<double,STAR,VR>( X );
 
     int NN[2] = { N0, N1 };
     int nn[2] = { n0, n1 };
     unsigned nfftFlags = PRE_PHI_HUT| PRE_FULL_PSI| FFTW_INIT| FFT_OUT_OF_PLACE;
     unsigned fftwFlags = FFTW_MEASURE| FFTW_DESTROY_INPUT;
 
-    ::coilPlans.clear();
-    ::coilPlans.resize( numCoils );
-    for( int coil=0; coil<numCoils; ++coil )
+    ::localCoilPlans.clear();
+    ::localCoilPlans.resize( numLocalPaths );
+    for( int localPath=0; localPath<numLocalPaths; ++localPath )
     {
-        nfft_plan& plan = ::coilPlans[coil];
-        plan.x = ::coilPaths->Buffer(0,coil);
+        nfft_plan& plan = ::localCoilPlans[localPath];
+        plan.x = ::coilPaths->Buffer(0,localPath);
         nfft_init_guru( &plan, d, NN, M, nn, m, nfftFlags, fftwFlags );
         if( plan.nfft_flags & PRE_ONE_PSI )
             nfft_precompute_one_psi( &plan );
@@ -196,23 +205,43 @@ void FinalizeCoilPlans()
     if( !InitializedCoilPlans() )
         LogicError("Have not yet initialized coil plans");
 #endif
-    const int numCoils = ::coilPlans.size();
-    for( int coil=0; coil<numCoils; ++coil )
-        nfft_finalize( &::coilPlans[coil] );
-    ::coilPlans.clear();
+    const int numLocalPaths = ::localCoilPlans.size();
+    for( int localPath=0; localPath<numLocalPaths; ++localPath )
+        nfft_finalize( &::localCoilPlans[localPath] );
+    ::localCoilPlans.clear();
     delete ::coilPaths;
 
     ::initializedCoilPlans = false;
 }
 
-nfft_plan& CoilPlan( int coil )
-{ 
+int NumCoils()
+{
 #ifndef RELEASE
-    CallStackEntry cse("CoilPlan");
+    CallStackEntry cse("NumCoils");
     if( !InitializedCoilPlans() )
         LogicError("Have not yet initialized coil plans");
 #endif
-    return ::coilPlans[coil]; 
+    return ::numCoils;
+}
+
+int NumTimesteps()
+{
+#ifndef RELEASE
+    CallStackEntry cse("NumTimesteps");
+    if( !InitializedCoilPlans() )
+        LogicError("Have not yet initialized coil plans");
+#endif
+    return ::numTimesteps;
+}
+
+int NumLocalPaths()
+{
+#ifndef RELEASE
+    CallStackEntry cse("NumLocalPaths");
+    if( !InitializedCoilPlans() )
+        LogicError("Have not yet initialized coil plans");
+#endif
+    return ::localCoilPlans.size();
 }
 
 int NumNonUniformPoints()
@@ -243,6 +272,16 @@ int SecondBandwidth()
         LogicError("Have not yet initialized coil plans");
 #endif
     return ::secondBandwidth; 
+}
+
+nfft_plan& LocalCoilPlan( int localPath )
+{ 
+#ifndef RELEASE
+    CallStackEntry cse("CoilPlan");
+    if( !InitializedCoilPlans() )
+        LogicError("Have not yet initialized coil plans");
+#endif
+    return ::localCoilPlans[localPath]; 
 }
 
 } // namespace mri
