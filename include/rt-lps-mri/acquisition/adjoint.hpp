@@ -24,7 +24,21 @@ ScaleBySensitivities
 #ifndef RELEASE
     CallStackEntry cse("acquisition::ScaleBySensitivities");
 #endif
-    // TODO
+    const int numCoils = NumCoils();
+    const int height = F.Height();
+    const int localWidth = F.LocalWidth();
+    const int rowShift = F.RowShift();
+    const int rowStride = F.RowStride();
+    scaledF = F;
+    for( int jLoc=0; jLoc<localWidth; ++jLoc )
+    {
+        const int j = rowShift + jLoc*rowStride;
+        const int time = j / numCoils; // TODO: use mapping jLoc -> time?
+        auto fImage = scaledF.Buffer(0,jLoc);
+        const auto sensitivity = Sensitivity().LockedBuffer(0,time);
+        for( int i=0; i<height; ++i )
+            fImage[i] *= sensitivity[i];
+    }
 }
 
 inline void
@@ -33,7 +47,23 @@ ContractionPrescaling( DistMatrix<Complex<double>,STAR,VR>& FHat )
 #ifndef RELEASE
     CallStackEntry cse("acquisition::ContractionPrescaling");
 #endif
-    // TODO
+    const int numCoils = NumCoils();
+    const auto& sensitivity = Sensitivity();
+    const auto& sensitivityScalings = SensitivityScalings();
+    const int height = FHat.Height();
+    const int localWidth = FHat.LocalWidth();
+    const int rowShift = FHat.RowShift();
+    const int rowStride = FHat.RowStride();
+    for( int jLoc=0; jLoc<localWidth; ++jLoc )
+    {
+        const int j = rowShift + jLoc*rowStride;
+        const int coil = j % numCoils; 
+        auto fHat = FHat.Buffer(0,jLoc);
+        const auto senseCol = sensitivity.LockedBuffer(0,coil);
+        const auto senseScaleCol = sensitivityScalings.LockedBuffer();
+        for( int i=0; i<height; ++i )
+            fHat[i] *= Conj(senseCol[i])/senseScaleCol[i];    
+    }
 }
 
 inline void

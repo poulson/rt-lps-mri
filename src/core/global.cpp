@@ -28,6 +28,7 @@ std::vector<nfft_plan> localCoilPlans;
 bool initializedAcquisition = false;
 elem::DistMatrix<double,elem::STAR,elem::STAR>* densityComp;
 elem::DistMatrix<elem::Complex<double>,elem::STAR,elem::STAR>* sensitivity;
+elem::DistMatrix<double,elem::STAR,elem::STAR>* sensitivityScalings;
 }
 
 namespace mri {
@@ -222,9 +223,22 @@ void InitializeAcquisition
     if( sens.Height() != X.Height()/2 || sens.Width() != numTimesteps )
         LogicError("Coil sensitivity matrix of the wrong size");
 #endif
+    InitializeCoilPlans( X, numCoils, numTimesteps, N0, N1, n0, n1, m );
+
     ::densityComp = new DistMatrix<double,         STAR,STAR>( dens );
     ::sensitivity = new DistMatrix<Complex<double>,STAR,STAR>( sens );
-    InitializeCoilPlans( X, numCoils, numTimesteps, N0, N1, n0, n1, m );
+
+    ::sensitivityScalings = new DistMatrix<double,STAR,STAR>( sens.Grid() );
+    Zeros( *::sensitivityScalings, N0*N1, 1 );
+    for( int i=0; i<N0*N1; ++i )
+    {
+        for( int j=0; j<numCoils; ++j )
+        {
+            const Complex<double> eta = ::sensitivity->GetLocal(i,j);
+            ::sensitivityScalings->UpdateLocal( i, 0, RealPart(eta*Conj(eta)) );
+        }
+    }
+
     ::initializedAcquisition = true;
 }
 
@@ -235,13 +249,12 @@ void FinalizeCoilPlans()
     if( !InitializedCoilPlans() )
         LogicError("Have not yet initialized coil plans");
 #endif
+    ::initializedCoilPlans = false;
     const int numLocalPaths = ::localCoilPlans.size();
     for( int localPath=0; localPath<numLocalPaths; ++localPath )
         nfft_finalize( &::localCoilPlans[localPath] );
     ::localCoilPlans.clear();
     delete ::coilPaths;
-
-    ::initializedCoilPlans = false;
 }
 
 void FinalizeAcquisition()
@@ -251,10 +264,11 @@ void FinalizeAcquisition()
     if( !InitializedAcquisition() )
         LogicError("Have not yet initialized acquisition operator");
 #endif
-    FinalizeCoilPlans();
+    ::initializedAcquisition = false;
     delete ::densityComp;
     delete ::sensitivity;
-    ::initializedAcquisition = false;
+    delete ::sensitivityScalings;
+    FinalizeCoilPlans();
 }
 
 int NumCoils()
@@ -355,6 +369,16 @@ const DistMatrix<elem::Complex<double>,STAR,STAR>& Sensitivity()
         LogicError("Have not yet initialized acquisition operator");
 #endif
     return *::sensitivity;
+}
+
+const DistMatrix<double,STAR,STAR>& SensitivityScalings()
+{
+#ifndef RELEASE
+    CallStackEntry cse("SensitivityScalings");
+    if( !InitializedAcquisition() )
+        LogicError("Have not yet initialized acquisition operator");
+#endif
+    return *::sensitivityScalings;
 }
 
 } // namespace mri

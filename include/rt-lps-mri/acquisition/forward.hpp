@@ -44,7 +44,20 @@ CompensateDensities
 #ifndef RELEASE
     CallStackEntry cse("acquisition::CompensateDensities");
 #endif
-    // TODO
+    const int numCoils = NumCoils();
+    const int height = scatteredImages.Height();
+    const int localWidth = scatteredImages.LocalWidth();
+    const int rowShift = scatteredImages.RowShift();
+    const int rowStride = scatteredImages.RowStride();
+    for( int jLoc=0; jLoc<localWidth; ++jLoc )
+    {
+        const int j = rowShift + jLoc*rowStride;
+        const int coil = j % numCoils; // TODO: use mapping jLoc -> coil?
+        auto image = scatteredImages.Buffer(0,jLoc);
+        const auto densities = DensityComp().LockedBuffer(0,coil);
+        for( int i=0; i<height; ++i )
+            image[i] *= densities[i];
+    }
 }
 
 } // namespace acquisition

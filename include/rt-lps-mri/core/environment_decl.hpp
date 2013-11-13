@@ -30,6 +30,8 @@ using elem::Int;
 using elem::Base;
 using elem::Complex;
 using elem::Abs;
+using elem::Conj;
+using elem::RealPart;
 using elem::Sqrt;
 using elem::SampleUniform;
 
@@ -125,9 +127,17 @@ int SecondBandwidth();
 
 nfft_plan& LocalCoilPlan( int localPath );
 
+// M x numCoils*numTimesteps
 const DistMatrix<double,STAR,VR>& CoilPaths();
+
+// M x numTimesteps
 const DistMatrix<double,STAR,STAR>& DensityComp();
+
+// N0*N1 x numCoils
 const DistMatrix<Complex<double>,STAR,STAR>& Sensitivity();
+
+// N0*N1 x 1
+const DistMatrix<double,STAR,STAR>& SensitivityScalings();
 
 } // namespace mri
 
