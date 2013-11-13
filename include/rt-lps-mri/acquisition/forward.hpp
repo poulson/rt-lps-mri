@@ -25,6 +25,7 @@ namespace mri {
 
 namespace acquisition {
 
+// TODO: Modify this routine to avoid sending and receiving redundant columns
 inline void
 Scatter
 ( const DistMatrix<Complex<double>,VC,STAR>& images,
@@ -33,8 +34,90 @@ Scatter
 #ifndef RELEASE
     CallStackEntry cse("acquisition::Scatter");
 #endif
-    DistMatrix<Complex<double>,STAR,MR> images_STAR_MR( images );
-    // TODO
+    DistMatrix<Complex<double>,STAR,VR> images_STAR_VR( images );
+
+    const int height = images.Height();
+    const int numCoils = NumCoils();
+    const int numTimesteps = NumTimesteps();
+    const int rowAlign = images.RowAlign();
+    const int rowShift = images.RowShift();
+    const int rowStride = images.RowStride();
+    scatteredImages.SetGrid( images.Grid() );
+    scatteredImages.AlignWith( images );
+    Zeros( scatteredImages, height, numCoils*numTimesteps );
+    const int localOrigWidth = images.LocalWidth();
+    const int localScatWidth = scatteredImages.LocalWidth();
+
+    // Determine the number of entries we send to each process
+    std::vector<int> sendSizes( rowStride, 0 );
+    for( int jLoc=0; jLoc<localOrigWidth; ++jLoc )
+    {
+        const int jOrig = rowShift + jLoc*rowStride;
+        for( int jScat=jOrig*numCoils; jScat<(jOrig+1)*numCoils; ++jScat )
+        {
+            const int scatOwner = (jScat+rowAlign) % rowStride;
+            sendSizes[scatOwner] += height;
+        }
+    }
+
+    // Determine the number of entries we receive from each process
+    std::vector<int> recvSizes( rowStride, 0 );
+    for( int jLoc=0; jLoc<localScatWidth; ++jLoc )
+    {
+        const int jScat = rowShift + jLoc*rowStride;
+        const int jOrig = jScat / numCoils;
+        const int origOwner = (jOrig+rowAlign) % rowStride;
+        recvSizes[origOwner] += height;
+    }
+
+    // Form the send and recv offset vectors
+    int totalSend=0, totalRecv=0;
+    std::vector<int> sendOffsets( rowStride ), recvOffsets( rowStride );
+    for( int q=0; q<rowStride; ++q )
+    {
+        sendOffsets[q] = totalSend;
+        recvOffsets[q] = totalRecv;
+        totalSend += sendSizes[q];
+        totalRecv += recvSizes[q];
+    }
+
+    // Pack the send buffer
+    std::vector<Complex<double>> sendBuf( totalSend );
+    std::vector<int> offsets = sendOffsets;
+    for( int jLoc=0; jLoc<localOrigWidth; ++jLoc )
+    {
+        const int jOrig = rowShift + jLoc*rowStride;
+        for( int jScat=jOrig*numCoils; jScat<(jOrig+1)*numCoils; ++jScat )
+        {
+            const int scatOwner = (jScat+rowAlign) % rowStride;
+            elem::MemCopy
+            ( &sendBuf[offsets[scatOwner]], 
+              images.LockedBuffer(0,jLoc), height );
+            offsets[scatOwner] += height;
+        }
+    }
+
+    // Perform the non-uniform AllToAll communication
+    std::vector<Complex<double>> recvBuf( totalRecv );
+    mpi::AllToAll
+    ( sendBuf.data(), sendSizes.data(), sendOffsets.data(), 
+      recvBuf.data(), recvSizes.data(), recvOffsets.data(), images.RowComm() );
+    std::vector<Complex<double>>().swap( sendBuf );
+    std::vector<int>().swap( sendSizes );
+    std::vector<int>().swap( sendOffsets );
+
+    // Unpack the recv buffer
+    offsets = recvOffsets;
+    for( int jLoc=0; jLoc<localScatWidth; ++jLoc )
+    {
+        const int jScat = rowShift + jLoc*rowStride;
+        const int jOrig = jScat / numCoils;
+        const int origOwner = (jOrig+rowAlign) % rowStride;
+        elem::MemCopy
+        ( scatteredImages.Buffer(0,jLoc),
+          &recvBuf[offsets[origOwner]], height );
+        offsets[origOwner] += height;
+    }
 }
 
 inline void
