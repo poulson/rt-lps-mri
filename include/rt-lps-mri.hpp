@@ -23,5 +23,6 @@
 #include "rt-lps-mri/core/environment_decl.hpp"
 #include "rt-lps-mri/core/environment_impl.hpp"
 #include "rt-lps-mri/core/nfft.hpp"
+#include "rt-lps-mri/core/direct_nft.hpp"
 
 #endif // ifndef RTLPSMRI_HPP

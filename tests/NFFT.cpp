@@ -16,33 +16,63 @@ main( int argc, char* argv[] )
 
     try
     {
-        const int N1 = Input("--N1","bandwidth in x direction",6);
-        const int N2 = Input("--N2","bandwidth in y direction",6);
+        const int N0 = Input("--N0","bandwidth in x direction",6);
+        const int N1 = Input("--N1","bandwidth in y direction",6);
         const int M  = Input("--M","number of non-uniform nodes",36);
-        const int n1 = Input("--n1","FFT size in x direction",16);
-        const int n2 = Input("--n2","FFT size in y direction",16);
+        const int n0 = Input("--n0","FFT size in x direction",16);
+        const int n1 = Input("--n1","FFT size in y direction",16);
         const int m = Input("--m","cutoff parameter",2);
         const int width = Input("--width","number of indep. vectors",10);
+        const bool print = Input("--print","print matrices?",false);
         ProcessInput();
         PrintInputReport();
 
         DistMatrix<double,         STAR,VR> X;
-        DistMatrix<Complex<double>,STAR,VR> F, FHat;
+        DistMatrix<Complex<double>,STAR,VR> F, FDirect, FHat, FHatDirect;
 
         Uniform(X,2*M,width,0.,0.5);
         Sort(X); 
-        Uniform(FHat,N1*N2,width);
-        Zeros(F,M,width);
+        Uniform(FHat,N0*N1,width);
+        if( print )
+        {
+            Print( X, "X" );
+            Print( FHat, "FHat" );
+        }
 
-        Print( X, "X" );
-        Print( FHat, "FHat" );
+        NFFT2D( N0, N1, M, n0, n1, m, FHat, X, F );
+        if( print )
+            Print( F, "F after forward" );
 
-        NFFT2D( N1, N2, M, n1, n2, m, FHat, X, F );
-        Print( F, "F after forward" );
+        DirectNFT2D( N0, N1, M, FHat, X, FDirect );
+        if( print )
+            Print( FDirect, "F after direct forward" );
 
-        Uniform(F,M,width);
-        AdjointNFFT2D( N1, N2, M, n1, n2, m, FHat, X, F );
-        Print( FHat, "FHat after adjoint" );
+        AdjointNFFT2D( N0, N1, M, n0, n1, m, FHat, X, F );
+        if( print )
+            Print( FHat, "FHat after adjoint" );
+
+        DirectAdjointNFT2D( N0, N1, M, FHatDirect, X, F );
+        if( print )
+            Print( FHatDirect, "FHat after direct adjoint" );
+
+        const double frobFDir = FrobeniusNorm( FDirect );
+        const double frobFHatDir = FrobeniusNorm( FHatDirect );
+        Axpy( -1., F, FDirect );
+        Axpy( -1., FHat, FHatDirect );
+        const double frobE = FrobeniusNorm( FDirect );
+        const double frobEHat = FrobeniusNorm( FHatDirect );
+        if( mpi::WorldRank() == 0 )
+        {
+            std::cout << "|| F ||_F = " << frobFDir << "\n"
+                      << "|| E ||_F = " << frobE << "\n"
+                      << "|| E ||_F / || F ||_F = " << frobE/frobFDir <<"\n"
+                      << "\n"
+                      << "|| FHat ||_F = " << frobFHatDir << "\n"
+                      << "|| EHat ||_F = " << frobEHat << "\n"
+                      << "|| EHat ||_F / || FHat ||_F = " 
+                      << frobEHat/frobFHatDir << "\n"
+                      << std::endl;
+        }
     }
     catch( std::exception& e ) { ReportException(e); }
 

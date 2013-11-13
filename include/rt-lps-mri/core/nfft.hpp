@@ -18,7 +18,7 @@ namespace mri {
 
 inline void
 NFFT2D
-( int N1, int N2, int M, int n1, int n2, int m, 
+( int N0, int N1, int M, int n0, int n1, int m, 
   const DistMatrix<Complex<double>,STAR,VR>& FHat, 
   const DistMatrix<double,         STAR,VR>& X,
         DistMatrix<Complex<double>,STAR,VR>& F )
@@ -27,11 +27,11 @@ NFFT2D
     CallStackEntry cse("NFFT2D");
 #endif
     const Int d = 2;
-    const Int width = FHat.Width();
+    const Int width = X.Width();
 #ifndef RELEASE
-    if( N1 % 2 != 0 || N2 % 2 != 0 )
+    if( N0 % 2 != 0 || N1 % 2 != 0 )
         LogicError("NFFT requires band limits to be even integers\n");
-    if( FHat.Height() != N1*N2 )
+    if( FHat.Height() != N0*N1 )
         LogicError("Invalid FHat height");
     if( X.Height() != d*M )
         LogicError("Invalid X height");
@@ -45,8 +45,8 @@ NFFT2D
     const Int locWidth = F.LocalWidth();
 
     nfft_plan p; 
-    int NN[2] = { N1, N2 };
-    int nn[2] = { n1, n2 };
+    int NN[2] = { N0, N1 };
+    int nn[2] = { n0, n1 };
 
     unsigned nfftFlags = PRE_PHI_HUT| PRE_FULL_PSI| FFTW_INIT| FFT_OUT_OF_PLACE;
     unsigned fftwFlags = FFTW_MEASURE| FFTW_DESTROY_INPUT;
@@ -70,18 +70,18 @@ NFFT2D
 
 inline void
 AdjointNFFT2D
-( int N1, int N2, int M, int n1, int n2, int m,
+( int N0, int N1, int M, int n0, int n1, int m,
         DistMatrix<Complex<double>,STAR,VR>& FHat,
   const DistMatrix<double,         STAR,VR>& X,
   const DistMatrix<Complex<double>,STAR,VR>& F )
 {
 #ifndef RELEASE
-    CallStackEntry cse("NFFT2D");
+    CallStackEntry cse("AdjointNFFT2D");
 #endif
     const Int d = 2;
-    const Int width = FHat.Width();
+    const Int width = X.Width();
 #ifndef RELEASE
-    if( N1 % 2 != 0 || N2 % 2 != 0 )
+    if( N0 % 2 != 0 || N1 % 2 != 0 )
         LogicError("NFFT requires band limits to be even integers\n");
     if( F.Height() != M )
         LogicError("Invalid F height");
@@ -93,12 +93,12 @@ AdjointNFFT2D
         LogicError("F and X are not aligned");
 #endif
     FHat.AlignWith( F );
-    Zeros( FHat, N1*N2, width );
+    Zeros( FHat, N0*N1, width );
     const Int locWidth = FHat.LocalWidth();
 
     nfft_plan p;
-    int NN[2] = { N1, N2 };
-    int nn[2] = { n1, n2 };
+    int NN[2] = { N0, N1 };
+    int nn[2] = { n0, n1 };
 
     unsigned nfftFlags = PRE_PHI_HUT| PRE_FULL_PSI| FFTW_INIT| FFT_OUT_OF_PLACE;
     unsigned fftwFlags = FFTW_MEASURE| FFTW_DESTROY_INPUT;
