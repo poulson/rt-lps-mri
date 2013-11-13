@@ -29,6 +29,8 @@ NFFT2D
     const Int d = 2;
     const Int width = FHat.Width();
 #ifndef RELEASE
+    if( N1 % 2 != 0 || N2 % 2 != 0 )
+        LogicError("NFFT requires band limits to be even integers\n");
     if( FHat.Height() != N1*N2 )
         LogicError("Invalid FHat height");
     if( X.Height() != d*M )
@@ -79,6 +81,8 @@ AdjointNFFT2D
     const Int d = 2;
     const Int width = FHat.Width();
 #ifndef RELEASE
+    if( N1 % 2 != 0 || N2 % 2 != 0 )
+        LogicError("NFFT requires band limits to be even integers\n");
     if( F.Height() != M )
         LogicError("Invalid F height");
     if( X.Height() != d*M )
@@ -111,7 +115,7 @@ AdjointNFFT2D
         nfft_init_guru( &p, d, NN, M, nn, m, nfftFlags, fftwFlags );
         if( p.nfft_flags & PRE_ONE_PSI )
             nfft_precompute_one_psi( &p );  // TODO: See if this can be hoisted
-        nfft_adjoint_2d( &p );
+        nfft_adjoint( &p );
         nfft_finalize( &p );
     }
 }

@@ -16,9 +16,9 @@ main( int argc, char* argv[] )
 
     try
     {
-        const int N1 = Input("--N1","bandwidth in x direction",5);
-        const int N2 = Input("--N2","bandwidth in y direction",5);
-        const int M  = Input("--M","number of non-uniform nodes",25);
+        const int N1 = Input("--N1","bandwidth in x direction",6);
+        const int N2 = Input("--N2","bandwidth in y direction",6);
+        const int M  = Input("--M","number of non-uniform nodes",36);
         const int n1 = Input("--n1","FFT size in x direction",16);
         const int n2 = Input("--n2","FFT size in y direction",16);
         const int m = Input("--m","cutoff parameter",2);
@@ -40,6 +40,7 @@ main( int argc, char* argv[] )
         NFFT2D( N1, N2, M, n1, n2, m, FHat, X, F );
         Print( F, "F after forward" );
 
+        Uniform(F,M,width);
         AdjointNFFT2D( N1, N2, M, n1, n2, m, FHat, X, F );
         Print( FHat, "FHat after adjoint" );
     }
