@@ -16,6 +16,7 @@ main( int argc, char* argv[] )
 
     try
     {
+        const int nt = Input("--nt","number of timesteps",12);
         const int N0 = Input("--N0","bandwidth in x direction",6);
         const int N1 = Input("--N1","bandwidth in y direction",6);
         const int M  = Input("--M","number of non-uniform nodes",36);
@@ -32,26 +33,26 @@ main( int argc, char* argv[] )
 
         Uniform(X,2*M,width,0.,0.5);
         Sort(X); 
-        Uniform(FHat,N0*N1,width);
+        Uniform(FHat,nt*N0*N1,width);
         if( print )
         {
             Print( X, "X" );
             Print( FHat, "FHat" );
         }
 
-        NFFT2D( N0, N1, M, n0, n1, m, FHat, X, F );
+        CoilAwareNFFT2D( nt, N0, N1, M, n0, n1, m, FHat, X, F );
         if( print )
             Print( F, "F after forward" );
 
-        NFT2D( N0, N1, M, FHat, X, FDirect );
+        CoilAwareNFT2D( nt, N0, N1, M, FHat, X, FDirect );
         if( print )
             Print( FDirect, "F after direct forward" );
 
-        AdjointNFFT2D( N0, N1, M, n0, n1, m, FHat, X, F );
+        CoilAwareAdjointNFFT2D( nt, N0, N1, M, n0, n1, m, FHat, X, F );
         if( print )
             Print( FHat, "FHat after adjoint" );
 
-        AdjointNFT2D( N0, N1, M, FHatDirect, X, F );
+        CoilAwareAdjointNFT2D( nt, N0, N1, M, FHatDirect, X, F );
         if( print )
             Print( FHatDirect, "FHat after direct adjoint" );
 

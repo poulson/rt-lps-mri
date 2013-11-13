@@ -6,24 +6,24 @@
    under the BSD 2-Clause License, which can be found in the LICENSE file in the
    root directory, or at http://opensource.org/licenses/BSD-2-Clause
 */
-#ifndef RTLPSMRI_CORE_DIRECT_NFT_HPP
-#define RTLPSMRI_CORE_DIRECT_NFT_HPP
+#ifndef RTLPSMRI_CORE_NFT_HPP
+#define RTLPSMRI_CORE_NFT_HPP
 
 namespace mri {
 
 inline void
-DirectNFT2D
+NFT2D
 ( int N0, int N1, int M, 
   const DistMatrix<Complex<double>,STAR,VR>& FHat, 
   const DistMatrix<double,         STAR,VR>& X,
         DistMatrix<Complex<double>,STAR,VR>& F )
 {
 #ifndef RELEASE
-    CallStackEntry cse("DirectNFT2D");
+    CallStackEntry cse("NFT2D");
 #endif
     const double pi = 4*elem::Atan( 1. );
-    const Int d = 2;
-    const Int width = X.Width();
+    const int d = 2;
+    const int width = X.Width();
 #ifndef RELEASE
     if( FHat.Height() != N0*N1 )
         LogicError("Invalid FHat height");
@@ -36,20 +36,20 @@ DirectNFT2D
 #endif
     F.AlignWith( FHat );
     Zeros( F, M, width );
-    const Int locWidth = F.LocalWidth();
-    for( Int jLoc=0; jLoc<locWidth; ++jLoc )
+    const int locWidth = F.LocalWidth();
+    for( int jLoc=0; jLoc<locWidth; ++jLoc )
     {
         Complex<double>* FCol = F.Buffer(0,jLoc);
         const double* XCol = X.LockedBuffer(0,jLoc);
         const Complex<double>* FHatCol = FHat.LockedBuffer(0,jLoc);
-        for( Int xi=0; xi<M; ++xi )
+        for( int xi=0; xi<M; ++xi )
         {
             const double x0 = XCol[2*xi+0];
             const double x1 = XCol[2*xi+1];
-            for( Int ki=0; ki<N0; ++ki )
+            for( int ki=0; ki<N0; ++ki )
             {
                 const double k0 = -N0/2+ki;
-                for( Int kj=0; kj<N1; ++kj )
+                for( int kj=0; kj<N1; ++kj )
                 {
                     const Complex<double> fhat = FHatCol[kj+ki*N1];
                     const double k1 = -N1/2+kj;
@@ -64,18 +64,18 @@ DirectNFT2D
 }
 
 inline void
-DirectAdjointNFT2D
+AdjointNFT2D
 ( int N0, int N1, int M, 
         DistMatrix<Complex<double>,STAR,VR>& FHat,
   const DistMatrix<double,         STAR,VR>& X,
   const DistMatrix<Complex<double>,STAR,VR>& F )
 {
 #ifndef RELEASE
-    CallStackEntry cse("DirectAdjointNFT2D");
+    CallStackEntry cse("AdjointNFT2D");
 #endif
     const double pi = 4*elem::Atan( 1. );
-    const Int d = 2;
-    const Int width = X.Width();
+    const int d = 2;
+    const int width = X.Width();
 #ifndef RELEASE
     if( F.Height() != M )
         LogicError("Invalid F height");
@@ -88,22 +88,22 @@ DirectAdjointNFT2D
 #endif
     FHat.AlignWith( F );
     Zeros( FHat, N0*N1, width );
-    const Int locWidth = FHat.LocalWidth();
+    const int locWidth = FHat.LocalWidth();
 
-    for( Int jLoc=0; jLoc<locWidth; ++jLoc )
+    for( int jLoc=0; jLoc<locWidth; ++jLoc )
     {
         const double* XCol = X.LockedBuffer(0,jLoc);
         const Complex<double>* FCol = F.LockedBuffer(0,jLoc);
         Complex<double>* FHatCol = FHat.Buffer(0,jLoc);
-        for( Int xi=0; xi<M; ++xi )
+        for( int xi=0; xi<M; ++xi )
         {
             const double x0 = XCol[2*xi+0];
             const double x1 = XCol[2*xi+1];
             const Complex<double> f = FCol[xi];
-            for( Int ki=0; ki<N0; ++ki )
+            for( int ki=0; ki<N0; ++ki )
             {
                 const double k0 = -N0/2+ki;
-                for( Int kj=0; kj<N1; ++kj )
+                for( int kj=0; kj<N1; ++kj )
                 {
                     const double k1 = -N1/2+kj;
                     const double theta = 2*pi*(x0*k0+x1*k1);
@@ -119,4 +119,4 @@ DirectAdjointNFT2D
 
 } // namespace mri
 
-#endif // ifndef RTLPSMRI_CORE_DIRECT_NFT_HPP
+#endif // ifndef RTLPSMRI_CORE_NFT_HPP
