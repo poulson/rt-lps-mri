@@ -104,10 +104,17 @@ public:
 void ReportException( std::exception& e );
 
 bool InitializedCoilPlans();
+bool InitializedAcquisition();
 void InitializeCoilPlans
 ( const DistMatrix<double,STAR,VR>& X, int numCoils, int numTimesteps, 
   int N0, int N1, int n0, int n1, int m );
+void InitializeAcquisition
+( const DistMatrix<double,         STAR,STAR>& densityComp,
+  const DistMatrix<Complex<double>,STAR,STAR>& sensitivity,
+  const DistMatrix<double,STAR,VR>& X, int numCoils, int numTimesteps, 
+  int N0, int N1, int n0, int n1, int m );
 void FinalizeCoilPlans();
+void FinalizeAcquisition();
 
 int NumCoils();
 int NumTimesteps();
@@ -117,6 +124,10 @@ int FirstBandwidth();
 int SecondBandwidth();
 
 nfft_plan& LocalCoilPlan( int localPath );
+
+const DistMatrix<double,STAR,VR>& CoilPaths();
+const DistMatrix<double,STAR,STAR>& DensityComp();
+const DistMatrix<Complex<double>,STAR,STAR>& Sensitivity();
 
 } // namespace mri
 

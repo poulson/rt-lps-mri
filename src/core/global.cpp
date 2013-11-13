@@ -24,6 +24,10 @@ int firstBandwidth;
 int secondBandwidth;
 elem::DistMatrix<double,elem::STAR,elem::VR>* coilPaths;
 std::vector<nfft_plan> localCoilPlans;
+
+bool initializedAcquisition = false;
+elem::DistMatrix<double,elem::STAR,elem::STAR>* densityComp;
+elem::DistMatrix<elem::Complex<double>,elem::STAR,elem::STAR>* sensitivity;
 }
 
 namespace mri {
@@ -105,7 +109,9 @@ void Finalize()
 
     if( ::numMriInits == 0 )
     {
-        if( InitializedCoilPlans() )
+        if( InitializedAcquisition() )
+            FinalizeAcquisition();
+        else if( InitializedCoilPlans() )
             FinalizeCoilPlans();
         delete ::args;    
         ::args = 0;
@@ -149,6 +155,9 @@ Args& GetArgs()
 
 bool InitializedCoilPlans()
 { return ::initializedCoilPlans; }
+
+bool InitializedAcquisition()
+{ return ::initializedAcquisition; }
 
 // All coil trajectories for each timestep are stored in subsequent columns, so 
 // that, for instance, the first 'numCoils' columns correspond to the first 
@@ -198,6 +207,27 @@ void InitializeCoilPlans
     ::initializedCoilPlans = true;
 }
 
+void InitializeAcquisition
+( const DistMatrix<double,         STAR,STAR>& dens, 
+  const DistMatrix<Complex<double>,STAR,STAR>& sens,
+  const DistMatrix<double,STAR,VR>& X, int numCoils, int numTimesteps, 
+  int N0, int N1, int n0, int n1, int m )
+{
+#ifndef RELEASE
+    CallStackEntry cse("InitializeAcquisition");
+    if( InitializedAcquisition() )
+        LogicError("Already initialized acquisition operator");
+    if( dens.Height() != N0*N1 || dens.Width() != numCoils )
+        LogicError("Density composition matrix of the wrong size");
+    if( sens.Height() != X.Height()/2 || sens.Width() != numTimesteps )
+        LogicError("Coil sensitivity matrix of the wrong size");
+#endif
+    ::densityComp = new DistMatrix<double,         STAR,STAR>( dens );
+    ::sensitivity = new DistMatrix<Complex<double>,STAR,STAR>( sens );
+    InitializeCoilPlans( X, numCoils, numTimesteps, N0, N1, n0, n1, m );
+    ::initializedAcquisition = true;
+}
+
 void FinalizeCoilPlans()
 {
 #ifndef RELEASE
@@ -212,6 +242,19 @@ void FinalizeCoilPlans()
     delete ::coilPaths;
 
     ::initializedCoilPlans = false;
+}
+
+void FinalizeAcquisition()
+{
+#ifndef RELEASE
+    CallStackEntry cse("FinalizeAcquisition");
+    if( !InitializedAcquisition() )
+        LogicError("Have not yet initialized acquisition operator");
+#endif
+    FinalizeCoilPlans();
+    delete ::densityComp;
+    delete ::sensitivity;
+    ::initializedAcquisition = false;
 }
 
 int NumCoils()
@@ -277,11 +320,41 @@ int SecondBandwidth()
 nfft_plan& LocalCoilPlan( int localPath )
 { 
 #ifndef RELEASE
-    CallStackEntry cse("CoilPlan");
+    CallStackEntry cse("LocalCoilPlan");
     if( !InitializedCoilPlans() )
         LogicError("Have not yet initialized coil plans");
 #endif
     return ::localCoilPlans[localPath]; 
+}
+
+const DistMatrix<double,STAR,VR>& CoilPaths()
+{
+#ifndef RELEASE
+    CallStackEntry cse("CoilPaths");
+    if( !InitializedCoilPlans() )
+        LogicError("Have not yet initialized coil plans");
+#endif
+    return *::coilPaths;
+}
+
+const DistMatrix<double,STAR,STAR>& DensityComp()
+{
+#ifndef RELEASE
+    CallStackEntry cse("DensityComp");
+    if( !InitializedAcquisition() )
+        LogicError("Have not yet initialized acquisition operator");
+#endif
+    return *::densityComp;
+}
+
+const DistMatrix<elem::Complex<double>,STAR,STAR>& Sensitivity()
+{
+#ifndef RELEASE
+    CallStackEntry cse("Sensitivity");
+    if( !InitializedAcquisition() )
+        LogicError("Have not yet initialized acquisition operator");
+#endif
+    return *::sensitivity;
 }
 
 } // namespace mri
