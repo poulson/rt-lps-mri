@@ -47,11 +47,11 @@ main( int argc, char* argv[] )
         if( print )
             Print( FDirect, "F after direct forward" );
 
-        AdjointNFFT2D( N0, N1, M, n0, n1, m, FHat, X, F );
+        AdjointNFFT2D( N0, N1, M, n0, n1, m, F, X, FHat );
         if( print )
             Print( FHat, "FHat after adjoint" );
 
-        AdjointNFT2D( N0, N1, M, FHatDirect, X, F );
+        AdjointNFT2D( N0, N1, M, F, X, FHatDirect );
         if( print )
             Print( FHatDirect, "FHat after direct adjoint" );
 

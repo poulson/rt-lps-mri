@@ -66,8 +66,8 @@ CoilAwareNFT2D
 
 inline void
 CoilAwareAdjointNFT2D
-(       DistMatrix<Complex<double>,STAR,VR>& FHat,
-  const DistMatrix<Complex<double>,STAR,VR>& F )
+( const DistMatrix<Complex<double>,STAR,VR>& F,
+        DistMatrix<Complex<double>,STAR,VR>& FHat )
 {
 #ifndef RELEASE
     CallStackEntry cse("CoilAwareAdjointNFT2D");

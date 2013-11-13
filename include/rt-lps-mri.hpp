@@ -16,15 +16,16 @@
 
 #include "rt-lps-mri/config.h"
 
-//
 // The core of the library
-//
-
 #include "rt-lps-mri/core/environment_decl.hpp"
 #include "rt-lps-mri/core/environment_impl.hpp"
 #include "rt-lps-mri/core/nfft.hpp"
 #include "rt-lps-mri/core/nft.hpp"
 #include "rt-lps-mri/core/coil_aware_nfft.hpp"
 #include "rt-lps-mri/core/coil_aware_nft.hpp"
+
+// Applying the acquisition operator and its adjoint
+#include "rt-lps-mri/acquisition/forward.hpp"
+#include "rt-lps-mri/acquisition/adjoint.hpp"
 
 #endif // ifndef RTLPSMRI_HPP

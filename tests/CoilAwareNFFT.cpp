@@ -55,11 +55,11 @@ main( int argc, char* argv[] )
         if( print )
             Print( FDirect, "F after direct forward" );
 
-        CoilAwareAdjointNFFT2D( FHat, F );
+        CoilAwareAdjointNFFT2D( F, FHat );
         if( print )
             Print( FHat, "FHat after adjoint" );
 
-        CoilAwareAdjointNFT2D( FHatDirect, F );
+        CoilAwareAdjointNFT2D( F, FHatDirect );
         if( print )
             Print( FHatDirect, "FHat after direct adjoint" );
 

@@ -71,9 +71,9 @@ NFFT2D
 inline void
 AdjointNFFT2D
 ( int N0, int N1, int M, int n0, int n1, int m,
-        DistMatrix<Complex<double>,STAR,VR>& FHat,
+  const DistMatrix<Complex<double>,STAR,VR>& F,
   const DistMatrix<double,         STAR,VR>& X,
-  const DistMatrix<Complex<double>,STAR,VR>& F )
+        DistMatrix<Complex<double>,STAR,VR>& FHat )
 {
 #ifndef RELEASE
     CallStackEntry cse("AdjointNFFT2D");

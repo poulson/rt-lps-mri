@@ -161,7 +161,7 @@ bool InitializedAcquisition()
 
 // All coil trajectories for each timestep are stored in subsequent columns, so 
 // that, for instance, the first 'numCoils' columns correspond to the first 
-// timestep.
+// timestep. This is subject to eventually changing.
 void InitializeCoilPlans
 ( const DistMatrix<double,STAR,VR>& X, int numCoils, int numTimesteps, 
   int N0, int N1, int n0, int n1, int m )

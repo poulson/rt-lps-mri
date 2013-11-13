@@ -61,42 +61,7 @@ main( int argc, char* argv[] )
             Print( FHat, "FHat" );
         }
 
-        // TODO: Apply acquisition operator instead
-
-        CoilAwareNFFT2D( FHat, F );
-        if( print )
-            Print( F, "F after forward" );
-
-        CoilAwareNFT2D( FHat, FDirect );
-        if( print )
-            Print( FDirect, "F after direct forward" );
-
-        CoilAwareAdjointNFFT2D( FHat, F );
-        if( print )
-            Print( FHat, "FHat after adjoint" );
-
-        CoilAwareAdjointNFT2D( FHatDirect, F );
-        if( print )
-            Print( FHatDirect, "FHat after direct adjoint" );
-
-        const double frobFDir = FrobeniusNorm( FDirect );
-        const double frobFHatDir = FrobeniusNorm( FHatDirect );
-        Axpy( -1., F, FDirect );
-        Axpy( -1., FHat, FHatDirect );
-        const double frobE = FrobeniusNorm( FDirect );
-        const double frobEHat = FrobeniusNorm( FHatDirect );
-        if( mpi::WorldRank() == 0 )
-        {
-            std::cout << "|| F ||_F = " << frobFDir << "\n"
-                      << "|| E ||_F = " << frobE << "\n"
-                      << "|| E ||_F / || F ||_F = " << frobE/frobFDir <<"\n"
-                      << "\n"
-                      << "|| FHat ||_F = " << frobFHatDir << "\n"
-                      << "|| EHat ||_F = " << frobEHat << "\n"
-                      << "|| EHat ||_F / || FHat ||_F = " 
-                      << frobEHat/frobFHatDir << "\n"
-                      << std::endl;
-        }
+        // TODO: Apply acquisition operator
     }
     catch( std::exception& e ) { ReportException(e); }
 

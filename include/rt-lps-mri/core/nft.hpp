@@ -66,9 +66,9 @@ NFT2D
 inline void
 AdjointNFT2D
 ( int N0, int N1, int M, 
-        DistMatrix<Complex<double>,STAR,VR>& FHat,
+  const DistMatrix<Complex<double>,STAR,VR>& F,
   const DistMatrix<double,         STAR,VR>& X,
-  const DistMatrix<Complex<double>,STAR,VR>& F )
+        DistMatrix<Complex<double>,STAR,VR>& FHat )
 {
 #ifndef RELEASE
     CallStackEntry cse("AdjointNFT2D");
