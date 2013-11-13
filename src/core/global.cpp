@@ -15,6 +15,13 @@ mri::Args* args = 0;
 #ifndef RELEASE
 std::stack<std::string> callStack;
 #endif
+
+bool initializedCoilPlans = false;
+int numNonUniformPoints;
+int firstBandwidth;
+int secondBandwidth;
+elem::Matrix<double>* coilPaths;
+std::vector<nfft_plan> coilPlans;
 }
 
 namespace mri {
@@ -96,6 +103,8 @@ void Finalize()
 
     if( ::numMriInits == 0 )
     {
+        if( InitializedCoilPlans() )
+            FinalizeCoilPlans();
         delete ::args;    
         ::args = 0;
     }
@@ -134,6 +143,106 @@ Args& GetArgs()
     if( args == 0 )
         throw std::runtime_error("No available instance of Args");
     return *::args;
+}
+
+bool InitializedCoilPlans()
+{ return ::initializedCoilPlans; }
+
+void InitializeCoilPlans
+( const Matrix<double>& X, int N0, int N1, int n0, int n1, int m )
+{
+#ifndef RELEASE
+    CallStackEntry cse("InitializeCoilPlans");
+    if( InitializedCoilPlans() )
+        LogicError("Already initialized coil plans");
+#endif
+    const int d = 2;
+    const int M = X.Height();
+    const int numCoils = X.Width();
+
+    ::numNonUniformPoints = M;
+    ::firstBandwidth = N0;
+    ::secondBandwidth = N1;
+
+#ifndef RELEASE
+    // TODO: Ensure that each column of X is sorted
+#endif
+    ::coilPaths = new Matrix<double>;
+    *::coilPaths = X;
+
+    int NN[2] = { N0, N1 };
+    int nn[2] = { n0, n1 };
+    unsigned nfftFlags = PRE_PHI_HUT| PRE_FULL_PSI| FFTW_INIT| FFT_OUT_OF_PLACE;
+    unsigned fftwFlags = FFTW_MEASURE| FFTW_DESTROY_INPUT;
+
+    ::coilPlans.clear();
+    ::coilPlans.resize( numCoils );
+    for( int coil=0; coil<numCoils; ++coil )
+    {
+        nfft_plan& plan = ::coilPlans[coil];
+        plan.x = ::coilPaths->Buffer(0,coil);
+        nfft_init_guru( &plan, d, NN, M, nn, m, nfftFlags, fftwFlags );
+        if( plan.nfft_flags & PRE_ONE_PSI )
+            nfft_precompute_one_psi( &plan );
+    }
+
+    ::initializedCoilPlans = true;
+}
+
+void FinalizeCoilPlans()
+{
+#ifndef RELEASE
+    CallStackEntry cse("FinalizeCoilPlans");
+    if( !InitializedCoilPlans() )
+        LogicError("Have not yet initialized coil plans");
+#endif
+    const int numCoils = ::coilPlans.size();
+    for( int coil=0; coil<numCoils; ++coil )
+        nfft_finalize( &::coilPlans[coil] );
+    ::coilPlans.clear();
+    delete ::coilPaths;
+
+    ::initializedCoilPlans = false;
+}
+
+nfft_plan& CoilPlan( int coil )
+{ 
+#ifndef RELEASE
+    CallStackEntry cse("CoilPlan");
+    if( !InitializedCoilPlans() )
+        LogicError("Have not yet initialized coil plans");
+#endif
+    return ::coilPlans[coil]; 
+}
+
+int NumNonUniformPoints()
+{ 
+#ifndef RELEASE
+    CallStackEntry cse("NumNonUniformPoints");
+    if( !InitializedCoilPlans() )
+        LogicError("Have not yet initialized coil plans");
+#endif
+    return ::numNonUniformPoints; 
+}
+
+int FirstBandwidth()
+{ 
+#ifndef RELEASE
+    CallStackEntry cse("FirstBandwidth");
+    if( !InitializedCoilPlans() )
+        LogicError("Have not yet initialized coil plans");
+#endif
+    return ::firstBandwidth; 
+}
+
+int SecondBandwidth()
+{ 
+#ifndef RELEASE
+    CallStackEntry cse("SecondBandwidth");
+    if( !InitializedCoilPlans() )
+        LogicError("Have not yet initialized coil plans");
+#endif
+    return ::secondBandwidth; 
 }
 
 } // namespace mri

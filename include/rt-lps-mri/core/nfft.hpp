@@ -44,7 +44,7 @@ NFFT2D
     Zeros( F, M, width );
     const int locWidth = F.LocalWidth();
 
-    nfft_plan p; 
+    nfft_plan plan; 
     int NN[2] = { N0, N1 };
     int nn[2] = { n0, n1 };
 
@@ -56,15 +56,15 @@ NFFT2D
 #ifndef RELEASE
         // TODO: Ensure this column of X is sorted
 #endif
-        p.x = const_cast<double*>(X.LockedBuffer(0,jLoc));
-        p.f_hat = (fftw_complex*)
+        plan.x = const_cast<double*>(X.LockedBuffer(0,jLoc));
+        nfft_init_guru( &plan, d, NN, M, nn, m, nfftFlags, fftwFlags );
+        if( plan.nfft_flags & PRE_ONE_PSI )
+            nfft_precompute_one_psi( &plan ); 
+        plan.f_hat = (fftw_complex*)
             const_cast<Complex<double>*>(FHat.LockedBuffer(0,jLoc));
-        p.f = (fftw_complex*)F.Buffer(0,jLoc);
-        nfft_init_guru( &p, d, NN, M, nn, m, nfftFlags, fftwFlags );
-        if( p.nfft_flags & PRE_ONE_PSI )
-            nfft_precompute_one_psi( &p );  // TODO: See if this can be hoisted
-        nfft_trafo_2d( &p );
-        nfft_finalize( &p );
+        plan.f = (fftw_complex*)F.Buffer(0,jLoc);
+        nfft_trafo_2d( &plan );
+        nfft_finalize( &plan );
     }
 }
 
@@ -96,7 +96,7 @@ AdjointNFFT2D
     Zeros( FHat, N0*N1, width );
     const int locWidth = FHat.LocalWidth();
 
-    nfft_plan p;
+    nfft_plan plan;
     int NN[2] = { N0, N1 };
     int nn[2] = { n0, n1 };
 
@@ -108,15 +108,15 @@ AdjointNFFT2D
 #ifndef RELEASE
         // TODO: Ensure this column of X is sorted
 #endif
-        p.x = const_cast<double*>(X.LockedBuffer(0,jLoc));
-        p.f = (fftw_complex*)
+        plan.x = const_cast<double*>(X.LockedBuffer(0,jLoc));
+        nfft_init_guru( &plan, d, NN, M, nn, m, nfftFlags, fftwFlags );
+        if( plan.nfft_flags & PRE_ONE_PSI )
+            nfft_precompute_one_psi( &plan ); 
+        plan.f = (fftw_complex*)
             const_cast<Complex<double>*>(F.LockedBuffer(0,jLoc));
-        p.f_hat = (fftw_complex*)FHat.Buffer(0,jLoc);
-        nfft_init_guru( &p, d, NN, M, nn, m, nfftFlags, fftwFlags );
-        if( p.nfft_flags & PRE_ONE_PSI )
-            nfft_precompute_one_psi( &p );  // TODO: See if this can be hoisted
-        nfft_adjoint( &p );
-        nfft_finalize( &p );
+        plan.f_hat = (fftw_complex*)FHat.Buffer(0,jLoc);
+        nfft_adjoint( &plan );
+        nfft_finalize( &plan );
     }
 }
 

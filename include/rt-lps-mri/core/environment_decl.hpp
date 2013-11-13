@@ -31,6 +31,7 @@ using elem::Base;
 using elem::Complex;
 using elem::Abs;
 using elem::Sqrt;
+using elem::SampleUniform;
 
 // Pull in a few classes from Elemental
 using elem::Matrix;
@@ -101,6 +102,17 @@ public:
 #endif
 
 void ReportException( std::exception& e );
+
+bool InitializedCoilPlans();
+void InitializeCoilPlans
+( const Matrix<double>& X, int N0, int N1, int n0, int n1, int m );
+void FinalizeCoilPlans();
+
+int NumNonUniformPoints();
+int FirstBandwidth();
+int SecondBandwidth();
+
+nfft_plan& CoilPlan( int coil );
 
 } // namespace mri
 

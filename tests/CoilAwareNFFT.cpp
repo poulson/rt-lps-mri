@@ -16,7 +16,7 @@ main( int argc, char* argv[] )
 
     try
     {
-        const int nt = Input("--nt","number of timesteps",12);
+        const int nc = Input("--nc","number of coils",16);
         const int N0 = Input("--N0","bandwidth in x direction",6);
         const int N1 = Input("--N1","bandwidth in y direction",6);
         const int M  = Input("--M","number of non-uniform nodes",36);
@@ -28,31 +28,45 @@ main( int argc, char* argv[] )
         ProcessInput();
         PrintInputReport();
 
-        DistMatrix<double,         STAR,VR> X;
+        DistMatrix<double,STAR,STAR> X;
+        DistMatrix<int,            STAR,VR> coils;
         DistMatrix<Complex<double>,STAR,VR> F, FDirect, FHat, FHatDirect;
 
-        Uniform(X,2*M,width,0.,0.5);
-        Sort(X); 
-        Uniform(FHat,nt*N0*N1,width);
+        // Initialize each column to a 2*M length vector of samples from the
+        // real ball of radius 0.5 centered at the origin, then sort
+        Uniform( X, 2*M, nc, 0., 0.5 );
+        Sort( X ); 
+
+        // Initialize the coil plans
+        InitializeCoilPlans( X.Matrix(), N0, N1, n0, n1, m );
+
+        // Randomly select each coil assignment
+        Zeros( coils, 1, width );
+        for( int jLoc=0; jLoc<coils.LocalWidth(); ++jLoc )
+            coils.SetLocal( 0, jLoc, SampleUniform<int>(0,nc) );
+
+        // Generate a random source vector
+        Uniform( FHat, N0*N1, width );
         if( print )
         {
             Print( X, "X" );
             Print( FHat, "FHat" );
+            Print( coils, "coil assignments" );
         }
 
-        CoilAwareNFFT2D( nt, N0, N1, M, n0, n1, m, FHat, X, F );
+        CoilAwareNFFT2D( coils, FHat, F );
         if( print )
             Print( F, "F after forward" );
 
-        CoilAwareNFT2D( nt, N0, N1, M, FHat, X, FDirect );
+        CoilAwareNFT2D( coils, FHat, FDirect );
         if( print )
             Print( FDirect, "F after direct forward" );
 
-        CoilAwareAdjointNFFT2D( nt, N0, N1, M, n0, n1, m, FHat, X, F );
+        CoilAwareAdjointNFFT2D( coils, FHat, F );
         if( print )
             Print( FHat, "FHat after adjoint" );
 
-        CoilAwareAdjointNFT2D( nt, N0, N1, M, FHatDirect, X, F );
+        CoilAwareAdjointNFT2D( coils, FHatDirect, F );
         if( print )
             Print( FHatDirect, "FHat after direct adjoint" );
 
