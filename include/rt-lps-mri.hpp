@@ -28,4 +28,6 @@
 #include "rt-lps-mri/acquisition/forward.hpp"
 #include "rt-lps-mri/acquisition/adjoint.hpp"
 
+#include "rt-lps-mri/lps.hpp"
+
 #endif // ifndef RTLPSMRI_HPP

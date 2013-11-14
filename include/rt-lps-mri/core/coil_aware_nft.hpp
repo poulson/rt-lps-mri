@@ -21,13 +21,11 @@ CoilAwareNFT2D
 #endif
     const double pi = 4*elem::Atan( 1. );
     const int width = FHat.Width();
-    const int M = NumNonUniformPoints();
+    const int numNonUniform = NumNonUniformPoints();
     const int N0 = FirstBandwidth();
     const int N1 = SecondBandwidth();
 #ifndef RELEASE
-    const int nc = NumCoils();
-    const int nt = NumTimesteps();
-    if( width != nc*nt )
+    if( width != NumCoils()*NumTimesteps() )
         LogicError("Invalid width");
     if( FHat.Height() != N0*N1 )
         LogicError("Invalid FHat height");
@@ -35,7 +33,7 @@ CoilAwareNFT2D
         LogicError("Invalid alignment");
 #endif
     F.AlignWith( FHat );
-    Zeros( F, M, width );
+    Zeros( F, numNonUniform, width );
     const int locWidth = F.LocalWidth();
     for( int jLoc=0; jLoc<locWidth; ++jLoc )
     {
@@ -43,7 +41,7 @@ CoilAwareNFT2D
         const double* XCol = plan.x;
         Complex<double>* FCol = F.Buffer(0,jLoc);
         const Complex<double>* FHatCol = FHat.LockedBuffer(0,jLoc);
-        for( int xi=0; xi<M; ++xi )
+        for( int xi=0; xi<numNonUniform; ++xi )
         {
             const double x0 = XCol[2*xi+0];
             const double x1 = XCol[2*xi+1];
@@ -74,15 +72,13 @@ CoilAwareAdjointNFT2D
 #endif
     const double pi = 4*elem::Atan( 1. );
     const int width = F.Width();
-    const int M = NumNonUniformPoints();
+    const int numNonUniform = NumNonUniformPoints();
     const int N0 = FirstBandwidth();
     const int N1 = SecondBandwidth();
 #ifndef RELEASE
-    const int nc = NumCoils();
-    const int nt = NumTimesteps();
-    if( width != nc*nt )
+    if( width != NumCoils()*NumTimesteps() )
         LogicError("Invalid width");
-    if( F.Height() != M )
+    if( F.Height() != numNonUniform )
         LogicError("Invalid F height");
     if( F.LocalWidth() != NumLocalPaths() )
         LogicError("Invalid alignment");
@@ -97,7 +93,7 @@ CoilAwareAdjointNFT2D
         const double* XCol = plan.x;
         const Complex<double>* FCol = F.LockedBuffer(0,jLoc);
         Complex<double>* FHatCol = FHat.Buffer(0,jLoc);
-        for( int xi=0; xi<M; ++xi )
+        for( int xi=0; xi<numNonUniform; ++xi )
         {
             const double x0 = XCol[2*xi+0];
             const double x1 = XCol[2*xi+1];

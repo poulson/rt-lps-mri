@@ -13,7 +13,7 @@ namespace mri {
 
 inline void
 NFT2D
-( int N0, int N1, int M, 
+( int N0, int N1, int numNonUniform, 
   const DistMatrix<Complex<double>,STAR,VR>& FHat, 
   const DistMatrix<double,         STAR,VR>& X,
         DistMatrix<Complex<double>,STAR,VR>& F )
@@ -22,12 +22,11 @@ NFT2D
     CallStackEntry cse("NFT2D");
 #endif
     const double pi = 4*elem::Atan( 1. );
-    const int d = 2;
     const int width = X.Width();
 #ifndef RELEASE
     if( FHat.Height() != N0*N1 )
         LogicError("Invalid FHat height");
-    if( X.Height() != d*M )
+    if( X.Height() != 2*numNonUniform )
         LogicError("Invalid X height");
     if( FHat.Width() != X.Width() )
         LogicError("FHat and X must have the same width");
@@ -35,14 +34,14 @@ NFT2D
         LogicError("FHat and X are not aligned");
 #endif
     F.AlignWith( FHat );
-    Zeros( F, M, width );
+    Zeros( F, numNonUniform, width );
     const int locWidth = F.LocalWidth();
     for( int jLoc=0; jLoc<locWidth; ++jLoc )
     {
         Complex<double>* FCol = F.Buffer(0,jLoc);
         const double* XCol = X.LockedBuffer(0,jLoc);
         const Complex<double>* FHatCol = FHat.LockedBuffer(0,jLoc);
-        for( int xi=0; xi<M; ++xi )
+        for( int xi=0; xi<numNonUniform; ++xi )
         {
             const double x0 = XCol[2*xi+0];
             const double x1 = XCol[2*xi+1];
@@ -65,7 +64,7 @@ NFT2D
 
 inline void
 AdjointNFT2D
-( int N0, int N1, int M, 
+( int N0, int N1, int numNonUniform, 
   const DistMatrix<Complex<double>,STAR,VR>& F,
   const DistMatrix<double,         STAR,VR>& X,
         DistMatrix<Complex<double>,STAR,VR>& FHat )
@@ -74,12 +73,11 @@ AdjointNFT2D
     CallStackEntry cse("AdjointNFT2D");
 #endif
     const double pi = 4*elem::Atan( 1. );
-    const int d = 2;
     const int width = X.Width();
 #ifndef RELEASE
-    if( F.Height() != M )
+    if( F.Height() != numNonUniform )
         LogicError("Invalid F height");
-    if( X.Height() != d*M )
+    if( X.Height() != 2*numNonUniform )
         LogicError("Invalid X height");
     if( F.Width() != X.Width() )
         LogicError("F and X must have the same width");
@@ -95,7 +93,7 @@ AdjointNFT2D
         const double* XCol = X.LockedBuffer(0,jLoc);
         const Complex<double>* FCol = F.LockedBuffer(0,jLoc);
         Complex<double>* FHatCol = FHat.Buffer(0,jLoc);
-        for( int xi=0; xi<M; ++xi )
+        for( int xi=0; xi<numNonUniform; ++xi )
         {
             const double x0 = XCol[2*xi+0];
             const double x1 = XCol[2*xi+1];

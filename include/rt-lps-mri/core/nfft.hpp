@@ -18,7 +18,7 @@ namespace mri {
 
 inline void
 NFFT2D
-( int N0, int N1, int M, int n0, int n1, int m, 
+( int N0, int N1, int numNonUniform, int n0, int n1, int m, 
   const DistMatrix<Complex<double>,STAR,VR>& FHat, 
   const DistMatrix<double,         STAR,VR>& X,
         DistMatrix<Complex<double>,STAR,VR>& F )
@@ -26,14 +26,14 @@ NFFT2D
 #ifndef RELEASE
     CallStackEntry cse("NFFT2D");
 #endif
-    const int d = 2;
+    const int dim = 2;
     const int width = X.Width();
 #ifndef RELEASE
     if( N0 % 2 != 0 || N1 % 2 != 0 )
         LogicError("NFFT requires band limits to be even integers\n");
     if( FHat.Height() != N0*N1 )
         LogicError("Invalid FHat height");
-    if( X.Height() != d*M )
+    if( X.Height() != dim*numNonUniform )
         LogicError("Invalid X height");
     if( FHat.Width() != X.Width() )
         LogicError("FHat and X must have the same width");
@@ -41,12 +41,12 @@ NFFT2D
         LogicError("FHat and X are not aligned");
 #endif
     F.AlignWith( FHat );
-    Zeros( F, M, width );
+    Zeros( F, numNonUniform, width );
     const int locWidth = F.LocalWidth();
 
     nfft_plan plan; 
-    int NN[2] = { N0, N1 };
-    int nn[2] = { n0, n1 };
+    int NN[dim] = { N0, N1 };
+    int nn[dim] = { n0, n1 };
 
     unsigned nfftFlags = PRE_PHI_HUT| PRE_FULL_PSI| FFTW_INIT| FFT_OUT_OF_PLACE;
     unsigned fftwFlags = FFTW_MEASURE| FFTW_DESTROY_INPUT;
@@ -57,7 +57,8 @@ NFFT2D
         // TODO: Ensure this column of X is sorted
 #endif
         plan.x = const_cast<double*>(X.LockedBuffer(0,jLoc));
-        nfft_init_guru( &plan, d, NN, M, nn, m, nfftFlags, fftwFlags );
+        nfft_init_guru
+        ( &plan, dim, NN, numNonUniform, nn, m, nfftFlags, fftwFlags );
         if( plan.nfft_flags & PRE_ONE_PSI )
             nfft_precompute_one_psi( &plan ); 
         plan.f_hat = (fftw_complex*)
@@ -70,7 +71,7 @@ NFFT2D
 
 inline void
 AdjointNFFT2D
-( int N0, int N1, int M, int n0, int n1, int m,
+( int N0, int N1, int numNonUniform, int n0, int n1, int m,
   const DistMatrix<Complex<double>,STAR,VR>& F,
   const DistMatrix<double,         STAR,VR>& X,
         DistMatrix<Complex<double>,STAR,VR>& FHat )
@@ -78,14 +79,14 @@ AdjointNFFT2D
 #ifndef RELEASE
     CallStackEntry cse("AdjointNFFT2D");
 #endif
-    const int d = 2;
+    const int dim = 2;
     const int width = X.Width();
 #ifndef RELEASE
     if( N0 % 2 != 0 || N1 % 2 != 0 )
         LogicError("NFFT requires band limits to be even integers\n");
-    if( F.Height() != M )
+    if( F.Height() != numNonUniform )
         LogicError("Invalid F height");
-    if( X.Height() != d*M )
+    if( X.Height() != dim*numNonUniform )
         LogicError("Invalid X height");
     if( F.Width() != X.Width() )
         LogicError("F and X must have the same width");
@@ -97,8 +98,8 @@ AdjointNFFT2D
     const int locWidth = FHat.LocalWidth();
 
     nfft_plan plan;
-    int NN[2] = { N0, N1 };
-    int nn[2] = { n0, n1 };
+    int NN[dim] = { N0, N1 };
+    int nn[dim] = { n0, n1 };
 
     unsigned nfftFlags = PRE_PHI_HUT| PRE_FULL_PSI| FFTW_INIT| FFT_OUT_OF_PLACE;
     unsigned fftwFlags = FFTW_MEASURE| FFTW_DESTROY_INPUT;
@@ -109,7 +110,8 @@ AdjointNFFT2D
         // TODO: Ensure this column of X is sorted
 #endif
         plan.x = const_cast<double*>(X.LockedBuffer(0,jLoc));
-        nfft_init_guru( &plan, d, NN, M, nn, m, nfftFlags, fftwFlags );
+        nfft_init_guru
+        ( &plan, dim, NN, numNonUniform, nn, m, nfftFlags, fftwFlags );
         if( plan.nfft_flags & PRE_ONE_PSI )
             nfft_precompute_one_psi( &plan ); 
         plan.f = (fftw_complex*)

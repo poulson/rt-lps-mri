@@ -18,7 +18,7 @@ main( int argc, char* argv[] )
     {
         const int N0 = Input("--N0","bandwidth in x direction",6);
         const int N1 = Input("--N1","bandwidth in y direction",6);
-        const int M  = Input("--M","number of non-uniform nodes",36);
+        const int nnu = Input("--nnu","number of non-uniform nodes",36);
         const int n0 = Input("--n0","FFT size in x direction",16);
         const int n1 = Input("--n1","FFT size in y direction",16);
         const int m = Input("--m","cutoff parameter",2);
@@ -30,28 +30,28 @@ main( int argc, char* argv[] )
         DistMatrix<double,         STAR,VR> X;
         DistMatrix<Complex<double>,STAR,VR> F, FDirect, FHat, FHatDirect;
 
-        Uniform(X,2*M,width,0.,0.5);
-        Sort(X); 
-        Uniform(FHat,N0*N1,width);
+        Uniform( X, 2*nnu, width, 0., 0.5 );
+        Sort( X ); 
+        Uniform( FHat, N0*N1, width );
         if( print )
         {
             Print( X, "X" );
             Print( FHat, "FHat" );
         }
 
-        NFFT2D( N0, N1, M, n0, n1, m, FHat, X, F );
+        NFFT2D( N0, N1, nnu, n0, n1, m, FHat, X, F );
         if( print )
             Print( F, "F after forward" );
 
-        NFT2D( N0, N1, M, FHat, X, FDirect );
+        NFT2D( N0, N1, nnu, FHat, X, FDirect );
         if( print )
             Print( FDirect, "F after direct forward" );
 
-        AdjointNFFT2D( N0, N1, M, n0, n1, m, F, X, FHat );
+        AdjointNFFT2D( N0, N1, nnu, n0, n1, m, F, X, FHat );
         if( print )
             Print( FHat, "FHat after adjoint" );
 
-        AdjointNFT2D( N0, N1, M, F, X, FHatDirect );
+        AdjointNFT2D( N0, N1, nnu, F, X, FHatDirect );
         if( print )
             Print( FHatDirect, "FHat after direct adjoint" );
 

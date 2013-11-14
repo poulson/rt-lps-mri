@@ -20,7 +20,7 @@ main( int argc, char* argv[] )
         const int nt = Input("--nt","number of timesteps",10);
         const int N0 = Input("--N0","bandwidth in x direction",6);
         const int N1 = Input("--N1","bandwidth in y direction",6);
-        const int M  = Input("--M","number of non-uniform nodes",36);
+        const int nnu = Input("--nnu","number of non-uniform nodes",36);
         const int n0 = Input("--n0","FFT size in x direction",16);
         const int n1 = Input("--n1","FFT size in y direction",16);
         const int m = Input("--m","cutoff parameter",2);
@@ -31,9 +31,9 @@ main( int argc, char* argv[] )
         DistMatrix<double,         STAR,VR> X;
         DistMatrix<Complex<double>,STAR,VR> F, FDirect, FHat, FHatDirect;
 
-        // Initialize each column to a 2*M length vector of samples from the
+        // Initialize each column to a 2*nnu length vector of samples from the
         // real ball of radius 0.5 centered at the origin, then sort
-        Uniform( X, 2*M, nc*nt, 0., 0.5 );
+        Uniform( X, 2*nnu, nc*nt, 0., 0.5 );
         Sort( X ); 
 
         // Initialize the coil plans

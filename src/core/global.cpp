@@ -174,13 +174,13 @@ void InitializeCoilPlans
     if( X.Width() != numCoils*numTimesteps )
         LogicError("Wrong number of k-space paths provided");
 #endif
-    const int d = 2;
-    const int M = X.Height()/d;
+    const int dim = 2;
+    const int numNonUniform = X.Height()/dim;
     const int numLocalPaths = X.LocalWidth();
 
     ::numCoils = numCoils;
     ::numTimesteps = numTimesteps;
-    ::numNonUniformPoints = M;
+    ::numNonUniformPoints = numNonUniform;
     ::firstBandwidth = N0;
     ::secondBandwidth = N1;
 
@@ -189,8 +189,8 @@ void InitializeCoilPlans
 #endif
     ::coilPaths = new DistMatrix<double,STAR,VR>( X );
 
-    int NN[2] = { N0, N1 };
-    int nn[2] = { n0, n1 };
+    int NN[dim] = { N0, N1 };
+    int nn[dim] = { n0, n1 };
     unsigned nfftFlags = PRE_PHI_HUT| PRE_FULL_PSI| FFTW_INIT| FFT_OUT_OF_PLACE;
     unsigned fftwFlags = FFTW_MEASURE| FFTW_DESTROY_INPUT;
 
@@ -200,7 +200,8 @@ void InitializeCoilPlans
     {
         nfft_plan& plan = ::localCoilPlans[localPath];
         plan.x = ::coilPaths->Buffer(0,localPath);
-        nfft_init_guru( &plan, d, NN, M, nn, m, nfftFlags, fftwFlags );
+        nfft_init_guru
+        ( &plan, dim, NN, numNonUniform, nn, m, nfftFlags, fftwFlags );
         if( plan.nfft_flags & PRE_ONE_PSI )
             nfft_precompute_one_psi( &plan );
     }
