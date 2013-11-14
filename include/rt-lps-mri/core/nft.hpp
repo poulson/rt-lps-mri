@@ -60,6 +60,8 @@ NFT2D
             }
         }
     }
+    const double scale = 1./Sqrt(1.*N0*N1);
+    Scale( scale, F );
 }
 
 inline void
@@ -111,8 +113,9 @@ AdjointNFT2D
                 }
             }
         }
-
     }
+    const double scale = 1./Sqrt(1.*N0*N1);
+    Scale( scale, FHat );
 }
 
 } // namespace mri

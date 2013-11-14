@@ -67,6 +67,8 @@ NFFT2D
         nfft_trafo_2d( &plan );
         nfft_finalize( &plan );
     }
+    const double scale = 1./Sqrt(1.*N0*N1);
+    Scale( scale, F );
 }
 
 inline void
@@ -120,6 +122,8 @@ AdjointNFFT2D
         nfft_adjoint( &plan );
         nfft_finalize( &plan );
     }
+    const double scale = 1./Sqrt(1.*N0*N1);
+    Scale( scale, FHat );
 }
 
 } // namespace mri

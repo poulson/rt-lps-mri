@@ -23,11 +23,11 @@ CoilAwareNFFT2D
 #endif
     const int width = FHat.Width();
     const int numNonUniform = NumNonUniformPoints();
+    const int N0 = FirstBandwidth();
+    const int N1 = SecondBandwidth();
 #ifndef RELEASE
     const int numCoils = NumCoils();
     const int numTimesteps = NumTimesteps();
-    const int N0 = FirstBandwidth();
-    const int N1 = SecondBandwidth();
     if( numCoils*numTimesteps != width )
         LogicError("Invalid width");
     if( N0 % 2 != 0 || N1 % 2 != 0 )
@@ -48,6 +48,8 @@ CoilAwareNFFT2D
         p.f = (fftw_complex*)F.Buffer(0,jLoc);
         nfft_trafo_2d( &p );
     }
+    const double scale = 1./Sqrt(1.*N0*N1);
+    Scale( scale, F );
 }
 
 inline void
@@ -85,6 +87,8 @@ CoilAwareAdjointNFFT2D
         p.f_hat = (fftw_complex*)FHat.Buffer(0,jLoc);
         nfft_adjoint( &p );
     }
+    const double scale = 1./Sqrt(1.*N0*N1);
+    Scale( scale, FHat );
 }
 
 } // namespace mri

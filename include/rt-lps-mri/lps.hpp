@@ -59,7 +59,9 @@ LPS
         // S := TransformedST(M-L)
         S = M;
         Axpy( F(-1), L, S );
-        // TODO
+        TemporalFFT( S );
+        elem::SoftThreshold( S, lambdaS );
+        TemporalAdjointFFT( S );
 
         // M0 := M
         M0 = M;

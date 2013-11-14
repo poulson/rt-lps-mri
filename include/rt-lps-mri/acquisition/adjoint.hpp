@@ -179,8 +179,6 @@ AdjointAcquisition
     // Transform each k-space vector into the image domain
     DistMatrix<Complex<double>,STAR,VR> FHat( F.Grid() );
     CoilAwareAdjointNFFT2D( scaledF, FHat );
-    const double M = FirstBandwidth()*SecondBandwidth();
-    Scale( 1./Sqrt(M), FHat );
 
     // Perform a contraction over the coils with a weighting related to 
     // their sensitivities

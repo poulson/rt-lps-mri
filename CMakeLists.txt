@@ -36,6 +36,26 @@ if(NOT HAVE_NFFT_TRAFO)
   message(FATAL_ERROR "MATH_LIBS did not contain NFFT3")
 endif()
 
+
+# Check if the include directories work for FFTW
+set(FFTW_CODE
+    "#include \"fftw3.h\"
+     int main()
+     {
+       fftw_plan p;
+       p = fftw_plan_dft_1d(16, NULL, NULL, FFTW_FORWARD, FFTW_ESTIMATE);
+       fftw_execute(p);
+       fftw_destroy_plan(p);
+       return 0;
+     }")
+set(CMAKE_REQUIRED_INCLUDES ${FFTW_INC_DIR})
+set(CMAKE_REQUIRED_LIBRARIES ${MATH_LIBS})
+check_cxx_source_compiles("${FFTW_CODE}" HAVE_FFTW_COMPILE)
+if(NOT HAVE_FFTW_COMPILE)
+  message(FATAL_ERROR "Could not compile FFTW3 program using FFTW_INC_DIR=${FFTW_INC_DIR} and MATH_LIBS=${MATH_LIBS}")
+endif()
+include_directories(${FFTW_INC_DIR})
+
 # Check if the include directories work for NFFT
 set(NFFT_CODE
     "#include \"nfft3.h\"

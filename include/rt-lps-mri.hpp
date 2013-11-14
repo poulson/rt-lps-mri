@@ -12,6 +12,7 @@
 // TODO: Replace with elemental-lite.hpp and supporting routines
 #include "elemental.hpp"
 
+#include "fftw3.h"
 #include "nfft3.h"
 
 #include "rt-lps-mri/config.h"
@@ -23,6 +24,7 @@
 #include "rt-lps-mri/core/nft.hpp"
 #include "rt-lps-mri/core/coil_aware_nfft.hpp"
 #include "rt-lps-mri/core/coil_aware_nft.hpp"
+#include "rt-lps-mri/core/temporal_fft.hpp"
 
 // Applying the acquisition operator and its adjoint
 #include "rt-lps-mri/acquisition/forward.hpp"

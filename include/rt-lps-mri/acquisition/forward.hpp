@@ -165,8 +165,6 @@ Acquisition
 
     // Finish the transformation
     CoilAwareNFFT2D( scatteredImages, F );
-    const double M = FirstBandwidth()*SecondBandwidth();
-    Scale( 1./Sqrt(M), F );
 }
 
 } // namespace mri
