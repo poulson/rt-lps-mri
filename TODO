@@ -1,2 +1,3 @@
 - Exploit fact that k-space trajectories are the same for each coil
 - Modify acquisition::Scatter to avoid sending/receiving redundant columns
+- Allow for user-specified and/or dynamic step sizes

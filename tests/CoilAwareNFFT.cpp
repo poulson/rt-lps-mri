@@ -25,6 +25,7 @@ main( int argc, char* argv[] )
         const int n1 = Input("--n1","FFT size in y direction",16);
         const int m = Input("--m","cutoff parameter",2);
         const bool print = Input("--print","print matrices?",false);
+        const bool display = Input("--display","display matrices?",false);
         ProcessInput();
         PrintInputReport();
 
@@ -46,22 +47,35 @@ main( int argc, char* argv[] )
             Print( X, "X" );
             Print( FHat, "FHat" );
         }
+        if( display )
+        {
+            Display( X, "X" );
+            Display( FHat, "FHat" );
+        }
 
         CoilAwareNFFT2D( FHat, F );
         if( print )
             Print( F, "F after forward" );
+        if( display )
+            Display( F, "F after forward" );
 
         CoilAwareNFT2D( FHat, FDirect );
         if( print )
             Print( FDirect, "F after direct forward" );
+        if( display )
+            Display( FDirect, "F after direct forward" );
 
         CoilAwareAdjointNFFT2D( F, FHat );
         if( print )
             Print( FHat, "FHat after adjoint" );
+        if( display )
+            Display( FHat, "FHat after adjoint" );
 
         CoilAwareAdjointNFT2D( F, FHatDirect );
         if( print )
             Print( FHatDirect, "FHat after direct adjoint" );
+        if( display )
+            Display( FHatDirect, "FHat after direct adjoint" );
 
         const double frobFDir = FrobeniusNorm( FDirect );
         const double frobFHatDir = FrobeniusNorm( FHatDirect );

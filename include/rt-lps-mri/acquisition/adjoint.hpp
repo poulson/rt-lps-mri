@@ -74,7 +74,7 @@ CoilContraction
 #ifndef RELEASE
     CallStackEntry cse("acquisition::CoilContraction");
 #endif
-    const int height = images.Height();
+    const int height = FHat.Height();
     const int numCoils = NumCoils();
     const int numTimesteps = NumTimesteps();
     const int rowAlign = FHat.RowAlign();
