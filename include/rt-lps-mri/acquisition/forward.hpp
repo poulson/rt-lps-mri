@@ -39,33 +39,35 @@ Scatter
     const int height = images.Height();
     const int numCoils = NumCoils();
     const int numTimesteps = NumTimesteps();
-    const int rowAlign = images.RowAlign();
-    const int rowShift = images.RowShift();
-    const int rowStride = images.RowStride();
-    scatteredImages.SetGrid( images.Grid() );
-    scatteredImages.AlignWith( images );
+    const int rowAlign = images_STAR_VR.RowAlign();
+    const int rowShift = images_STAR_VR.RowShift();
+    const int rowStride = images_STAR_VR.RowStride();
+
+    scatteredImages.SetGrid( images_STAR_VR.Grid() );
+    scatteredImages.AlignWith( images_STAR_VR );
     Zeros( scatteredImages, height, numCoils*numTimesteps );
-    const int localOrigWidth = images.LocalWidth();
-    const int localScatWidth = scatteredImages.LocalWidth();
+
+    const int localOrigWidth = images_STAR_VR.LocalWidth();
+    const int localWidth = scatteredImages.LocalWidth();
 
     // Determine the number of entries we send to each process
     std::vector<int> sendSizes( rowStride, 0 );
     for( int jLoc=0; jLoc<localOrigWidth; ++jLoc )
     {
         const int jOrig = rowShift + jLoc*rowStride;
-        for( int jScat=jOrig*numCoils; jScat<(jOrig+1)*numCoils; ++jScat )
+        for( int j=jOrig*numCoils; j<(jOrig+1)*numCoils; ++j )
         {
-            const int scatOwner = (jScat+rowAlign) % rowStride;
-            sendSizes[scatOwner] += height;
+            const int owner = (j+rowAlign) % rowStride;
+            sendSizes[owner] += height;
         }
     }
 
     // Determine the number of entries we receive from each process
     std::vector<int> recvSizes( rowStride, 0 );
-    for( int jLoc=0; jLoc<localScatWidth; ++jLoc )
+    for( int jLoc=0; jLoc<localWidth; ++jLoc )
     {
-        const int jScat = rowShift + jLoc*rowStride;
-        const int jOrig = jScat / numCoils;
+        const int j = rowShift + jLoc*rowStride;
+        const int jOrig = j / numCoils;
         const int origOwner = (jOrig+rowAlign) % rowStride;
         recvSizes[origOwner] += height;
     }
@@ -87,13 +89,13 @@ Scatter
     for( int jLoc=0; jLoc<localOrigWidth; ++jLoc )
     {
         const int jOrig = rowShift + jLoc*rowStride;
-        for( int jScat=jOrig*numCoils; jScat<(jOrig+1)*numCoils; ++jScat )
+        for( int j=jOrig*numCoils; j<(jOrig+1)*numCoils; ++j )
         {
-            const int scatOwner = (jScat+rowAlign) % rowStride;
+            const int owner = (j+rowAlign) % rowStride;
             elem::MemCopy
-            ( &sendBuf[offsets[scatOwner]], 
-              images.LockedBuffer(0,jLoc), height );
-            offsets[scatOwner] += height;
+            ( &sendBuf[offsets[owner]], 
+              images_STAR_VR.LockedBuffer(0,jLoc), height );
+            offsets[owner] += height;
         }
     }
 
@@ -101,17 +103,18 @@ Scatter
     std::vector<Complex<double>> recvBuf( totalRecv );
     mpi::AllToAll
     ( sendBuf.data(), sendSizes.data(), sendOffsets.data(), 
-      recvBuf.data(), recvSizes.data(), recvOffsets.data(), images.RowComm() );
+      recvBuf.data(), recvSizes.data(), recvOffsets.data(), 
+      images_STAR_VR.RowComm() );
     std::vector<Complex<double>>().swap( sendBuf );
     std::vector<int>().swap( sendSizes );
     std::vector<int>().swap( sendOffsets );
 
     // Unpack the recv buffer
     offsets = recvOffsets;
-    for( int jLoc=0; jLoc<localScatWidth; ++jLoc )
+    for( int jLoc=0; jLoc<localWidth; ++jLoc )
     {
-        const int jScat = rowShift + jLoc*rowStride;
-        const int jOrig = jScat / numCoils;
+        const int j = rowShift + jLoc*rowStride;
+        const int jOrig = j / numCoils;
         const int origOwner = (jOrig+rowAlign) % rowStride;
         elem::MemCopy
         ( scatteredImages.Buffer(0,jLoc),
@@ -145,18 +148,16 @@ CompensateDensities
 
 } // namespace acquisition
 
-// NOTE: scatteredImages is a large temporary matrix and is only an argument
-//       in order to allow for avoiding allocating and freeing its memory
 inline void
 Acquisition
 ( const DistMatrix<Complex<double>,VC,STAR>& images,
-        DistMatrix<Complex<double>,STAR,VR>& F,
-        DistMatrix<Complex<double>,STAR,VR>& scatteredImages )
+        DistMatrix<Complex<double>,STAR,VR>& F )
 {
 #ifndef RELEASE
     CallStackEntry cse("Acquisition");
 #endif
     // Redundantly scatter image x time -> image x (coil,time)
+    DistMatrix<Complex<double>,STAR,VR> scatteredImages( images.Grid() );
     acquisition::Scatter( images, scatteredImages );
 
     // Apply the density compensations

@@ -37,10 +37,10 @@ main( int argc, char* argv[] )
         DistMatrix<Complex<double>,STAR,VR> F, FDirect, FHat, FHatDirect;
 
         // Sample from [0,1]
-        Uniform( densityComp, N0*N1, nc, 0.5, 0.5 );
+        Uniform( densityComp, M, nt, 0.5, 0.5 );
 
         // Sample from the complex unit ball
-        Uniform( sensitivity, M, nt, Complex<double>(0.,0.), 1. );
+        Uniform( sensitivity, N0*N1, nc, Complex<double>(0.,0.), 1. );
 
         // Initialize each column to a 2*M length vector of samples from the
         // real ball of radius 0.5 centered at the origin, then sort

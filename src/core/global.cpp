@@ -218,10 +218,10 @@ void InitializeAcquisition
     CallStackEntry cse("InitializeAcquisition");
     if( InitializedAcquisition() )
         LogicError("Already initialized acquisition operator");
-    if( dens.Height() != N0*N1 || dens.Width() != numCoils )
-        LogicError("Density composition matrix of the wrong size");
-    if( sens.Height() != X.Height()/2 || sens.Width() != numTimesteps )
+    if( sens.Height() != N0*N1 || sens.Width() != numCoils )
         LogicError("Coil sensitivity matrix of the wrong size");
+    if( dens.Height() != X.Height()/2 || dens.Width() != numTimesteps )
+        LogicError("Density composition matrix of the wrong size");
 #endif
     InitializeCoilPlans( X, numCoils, numTimesteps, N0, N1, n0, n1, m );
 
