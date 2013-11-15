@@ -29,9 +29,16 @@ main( int argc, char* argv[] )
         ProcessInput();
         PrintInputReport();
 
-        // Sample from [0,1]
+        // Sample from [0,1] and then have the top half of the matrix sorted
+        // downwards, and the bottom-half upwards. 
         DistMatrix<double,STAR,STAR> densityComp;
         Uniform( densityComp, nnu, nt, 0.5, 0.5 );
+        {
+            DistMatrix<double,STAR,STAR> densTop, densBot;
+            PartitionDown( densityComp, densTop, densBot, nnu/2 ); 
+            Sort( densTop, DESCENDING );
+            Sort( densBot, ASCENDING );
+        }
 
         // Sample from the complex unit ball
         DistMatrix<Complex<double>,STAR,STAR> sensitivity;

@@ -24,6 +24,7 @@ using namespace elem::left_or_right_wrapper;
 using namespace elem::orientation_wrapper;
 using namespace elem::unit_or_non_unit_wrapper;
 using namespace elem::upper_or_lower_wrapper;
+using namespace elem::sort_type_wrapper;
 
 // For scalar operations
 using elem::Int;
@@ -46,6 +47,12 @@ using elem::LockedView;
 using elem::Shift;
 using elem::Length;
 
+// Matrix generation, sorting, and norm calculation
+using elem::Uniform;
+using elem::Sort;
+using elem::FrobeniusNorm;
+
+// Exception generation
 using elem::LogicError;
 using elem::RuntimeError;
 
