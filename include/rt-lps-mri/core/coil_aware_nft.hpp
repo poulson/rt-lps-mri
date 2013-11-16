@@ -24,20 +24,23 @@ CoilAwareNFT2D
     const int numNonUniform = NumNonUniformPoints();
     const int N0 = FirstBandwidth();
     const int N1 = SecondBandwidth();
+    const int numCoils = NumCoils();
 #ifndef RELEASE
-    if( width != NumCoils()*NumTimesteps() )
+    if( width != numCoils*NumTimesteps() )
         LogicError("Invalid width");
     if( FHat.Height() != N0*N1 )
         LogicError("Invalid FHat height");
-    if( FHat.LocalWidth() != NumLocalPaths() )
-        LogicError("Invalid alignment");
 #endif
     F.AlignWith( FHat );
     Zeros( F, numNonUniform, width );
     const int locWidth = F.LocalWidth();
+    const int rowShift = F.RowShift();
+    const int rowStride = F.RowStride();
     for( int jLoc=0; jLoc<locWidth; ++jLoc )
     {
-        nfft_plan& plan = LocalCoilPlan( jLoc );
+        const int j = rowShift + jLoc*rowStride;
+        const int t = j / numCoils;
+        nfft_plan& plan = CoilPlan( t );
         const double* XCol = plan.x;
         Complex<double>* FCol = F.Buffer(0,jLoc);
         const Complex<double>* FHatCol = FHat.LockedBuffer(0,jLoc);
@@ -77,21 +80,23 @@ CoilAwareAdjointNFT2D
     const int numNonUniform = NumNonUniformPoints();
     const int N0 = FirstBandwidth();
     const int N1 = SecondBandwidth();
+    const int numCoils = NumCoils();
 #ifndef RELEASE
-    if( width != NumCoils()*NumTimesteps() )
+    if( width != numCoils*NumTimesteps() )
         LogicError("Invalid width");
     if( F.Height() != numNonUniform )
         LogicError("Invalid F height");
-    if( F.LocalWidth() != NumLocalPaths() )
-        LogicError("Invalid alignment");
 #endif
     FHat.AlignWith( F );
     Zeros( FHat, N0*N1, width );
-    const int locWidth = FHat.LocalWidth();
-
+    const int locWidth = F.LocalWidth();
+    const int rowShift = F.RowShift();
+    const int rowStride = F.RowStride();
     for( int jLoc=0; jLoc<locWidth; ++jLoc )
     {
-        nfft_plan& plan = LocalCoilPlan( jLoc );
+        const int j = rowShift + jLoc*rowStride;
+        const int t = j / numCoils;
+        nfft_plan& plan = CoilPlan( t );
         const double* XCol = plan.x;
         const Complex<double>* FCol = F.LockedBuffer(0,jLoc);
         Complex<double>* FHatCol = FHat.Buffer(0,jLoc);

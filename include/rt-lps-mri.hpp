@@ -25,6 +25,9 @@
 #include "rt-lps-mri/core/coil_aware_nfft.hpp"
 #include "rt-lps-mri/core/coil_aware_nft.hpp"
 #include "rt-lps-mri/core/temporal_fft.hpp"
+#include "rt-lps-mri/core/load_density.hpp"
+#include "rt-lps-mri/core/load_paths.hpp"
+#include "rt-lps-mri/core/load_sensitivity.hpp"
 
 // Applying the acquisition operator and its adjoint
 #include "rt-lps-mri/acquisition/forward.hpp"

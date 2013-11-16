@@ -57,6 +57,7 @@ LPS
             elem::svt::TallCross( L, lambdaL );
 
         // S := TransformedST(M-L)
+        // TODO: Add ability to use TV instead of a temporal FFT
         S = M;
         Axpy( F(-1), L, S );
         TemporalFFT( S );

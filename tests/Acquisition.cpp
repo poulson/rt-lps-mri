@@ -46,8 +46,8 @@ main( int argc, char* argv[] )
 
         // Initialize each column to a 2*nnu length vector of samples from the
         // real ball of radius 0.5 centered at the origin, then sort
-        DistMatrix<double,STAR,VR> X;
-        Uniform( X, 2*nnu, nc*nt, 0., 0.5 );
+        DistMatrix<double,STAR,STAR> X;
+        Uniform( X, 2*nnu, nt, 0., 0.5 );
         Sort( X ); 
 
         // Generate original data matrix
@@ -71,7 +71,7 @@ main( int argc, char* argv[] )
 
         // Initialize acquisition operator and its adjoint
         InitializeAcquisition
-        ( densityComp, sensitivity, X, nc, nt, N0, N1, n0, n1, m );
+        ( densityComp, sensitivity, X, nc, N0, N1, n0, n1, m );
 
         // Apply the adjoint of the acquisition operator
         DistMatrix<Complex<double>,VC,STAR> M;

@@ -22,8 +22,8 @@ int numTimesteps;
 int numNonUniformPoints;
 int firstBandwidth;
 int secondBandwidth;
-elem::DistMatrix<double,elem::STAR,elem::VR>* coilPaths;
-std::vector<nfft_plan> localCoilPlans;
+elem::DistMatrix<double,elem::STAR,elem::STAR>* coilPaths;
+std::vector<nfft_plan> coilPlans;
 
 bool initializedAcquisition = false;
 elem::DistMatrix<double,elem::STAR,elem::STAR>* densityComp;
@@ -160,23 +160,20 @@ bool InitializedCoilPlans()
 bool InitializedAcquisition()
 { return ::initializedAcquisition; }
 
-// All coil trajectories for each timestep are stored in subsequent columns, so 
-// that, for instance, the first 'numCoils' columns correspond to the first 
-// timestep. This is subject to eventually changing.
+// Each column of X corresponds to the Fourier-domain path for each timestep.
+// The trajectories are the same for each coil.
 void InitializeCoilPlans
-( const DistMatrix<double,STAR,VR>& X, int numCoils, int numTimesteps, 
-  int N0, int N1, int n0, int n1, int m )
+( const DistMatrix<double,STAR,STAR>& X, 
+  int numCoils, int N0, int N1, int n0, int n1, int m )
 {
 #ifndef RELEASE
     CallStackEntry cse("InitializeCoilPlans");
     if( InitializedCoilPlans() )
         LogicError("Already initialized coil plans");
-    if( X.Width() != numCoils*numTimesteps )
-        LogicError("Wrong number of k-space paths provided");
 #endif
     const int dim = 2;
     const int numNonUniform = X.Height()/dim;
-    const int numLocalPaths = X.LocalWidth();
+    const int numTimesteps = X.Width();
 
     ::numCoils = numCoils;
     ::numTimesteps = numTimesteps;
@@ -187,19 +184,19 @@ void InitializeCoilPlans
 #ifndef RELEASE
     // TODO: Ensure that each column of X is sorted
 #endif
-    ::coilPaths = new DistMatrix<double,STAR,VR>( X );
+    ::coilPaths = new DistMatrix<double,STAR,STAR>( X );
 
     int NN[dim] = { N0, N1 };
     int nn[dim] = { n0, n1 };
     unsigned nfftFlags = PRE_PHI_HUT| PRE_FULL_PSI| FFTW_INIT| FFT_OUT_OF_PLACE;
     unsigned fftwFlags = FFTW_MEASURE| FFTW_DESTROY_INPUT;
 
-    ::localCoilPlans.clear();
-    ::localCoilPlans.resize( numLocalPaths );
-    for( int localPath=0; localPath<numLocalPaths; ++localPath )
+    ::coilPlans.clear();
+    ::coilPlans.resize( numTimesteps );
+    for( int t=0; t<numTimesteps; ++t )
     {
-        nfft_plan& plan = ::localCoilPlans[localPath];
-        plan.x = ::coilPaths->Buffer(0,localPath);
+        nfft_plan& plan = ::coilPlans[t];
+        plan.x = ::coilPaths->Buffer(0,t);
         nfft_init_guru
         ( &plan, dim, NN, numNonUniform, nn, m, nfftFlags, fftwFlags );
         if( plan.nfft_flags & PRE_ONE_PSI )
@@ -212,8 +209,8 @@ void InitializeCoilPlans
 void InitializeAcquisition
 ( const DistMatrix<double,         STAR,STAR>& dens, 
   const DistMatrix<Complex<double>,STAR,STAR>& sens,
-  const DistMatrix<double,STAR,VR>& X, int numCoils, int numTimesteps, 
-  int N0, int N1, int n0, int n1, int m )
+  const DistMatrix<double,         STAR,STAR>& X, 
+  int numCoils, int N0, int N1, int n0, int n1, int m )
 {
 #ifndef RELEASE
     CallStackEntry cse("InitializeAcquisition");
@@ -221,10 +218,10 @@ void InitializeAcquisition
         LogicError("Already initialized acquisition operator");
     if( sens.Height() != N0*N1 || sens.Width() != numCoils )
         LogicError("Coil sensitivity matrix of the wrong size");
-    if( dens.Height() != X.Height()/2 || dens.Width() != numTimesteps )
+    if( dens.Height() != X.Height()/2 || dens.Width() != X.Width() )
         LogicError("Density composition matrix of the wrong size");
 #endif
-    InitializeCoilPlans( X, numCoils, numTimesteps, N0, N1, n0, n1, m );
+    InitializeCoilPlans( X, numCoils, N0, N1, n0, n1, m );
 
     ::densityComp = new DistMatrix<double,         STAR,STAR>( dens );
     ::sensitivity = new DistMatrix<Complex<double>,STAR,STAR>( sens );
@@ -250,12 +247,12 @@ void FinalizeCoilPlans()
     if( !InitializedCoilPlans() )
         LogicError("Have not yet initialized coil plans");
 #endif
-    ::initializedCoilPlans = false;
-    const int numLocalPaths = ::localCoilPlans.size();
-    for( int localPath=0; localPath<numLocalPaths; ++localPath )
-        nfft_finalize( &::localCoilPlans[localPath] );
-    ::localCoilPlans.clear();
+    const int numTimesteps = NumTimesteps();
+    for( int t=0; t<numTimesteps; ++t )
+        nfft_finalize( &::coilPlans[t] );
+    ::coilPlans.clear();
     delete ::coilPaths;
+    ::initializedCoilPlans = false;
 }
 
 void FinalizeAcquisition()
@@ -292,16 +289,6 @@ int NumTimesteps()
     return ::numTimesteps;
 }
 
-int NumLocalPaths()
-{
-#ifndef RELEASE
-    CallStackEntry cse("NumLocalPaths");
-    if( !InitializedCoilPlans() )
-        LogicError("Have not yet initialized coil plans");
-#endif
-    return ::localCoilPlans.size();
-}
-
 int NumNonUniformPoints()
 { 
 #ifndef RELEASE
@@ -332,17 +319,17 @@ int SecondBandwidth()
     return ::secondBandwidth; 
 }
 
-nfft_plan& LocalCoilPlan( int localPath )
+nfft_plan& CoilPlan( int path )
 { 
 #ifndef RELEASE
-    CallStackEntry cse("LocalCoilPlan");
+    CallStackEntry cse("CoilPlan");
     if( !InitializedCoilPlans() )
         LogicError("Have not yet initialized coil plans");
 #endif
-    return ::localCoilPlans[localPath]; 
+    return ::coilPlans[path]; 
 }
 
-const DistMatrix<double,STAR,VR>& CoilPaths()
+const DistMatrix<double,STAR,STAR>& CoilPaths()
 {
 #ifndef RELEASE
     CallStackEntry cse("CoilPaths");

@@ -33,10 +33,10 @@ main( int argc, char* argv[] )
         PrintInputReport();
 
         // Initialize the coil plans
-        DistMatrix<double,STAR,VR> X;
-        Uniform( X, 2*nnu, nc*nt, 0., 0.5 );
+        DistMatrix<double,STAR,STAR> X;
+        Uniform( X, 2*nnu, nt, 0., 0.5 );
         Sort( X );
-        InitializeCoilPlans( X, nc, nt, N0, N1, n0, n1, m );
+        InitializeCoilPlans( X, nc, N0, N1, n0, n1, m );
 
         // Generate a random matrix to apply the temporal FFT's to
         DistMatrix<F,VC,STAR> A;

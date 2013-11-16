@@ -115,27 +115,26 @@ void ReportException( std::exception& e );
 bool InitializedCoilPlans();
 bool InitializedAcquisition();
 void InitializeCoilPlans
-( const DistMatrix<double,STAR,VR>& X, int numCoils, int numTimesteps, 
-  int N0, int N1, int n0, int n1, int m );
+( const DistMatrix<double,STAR,STAR>& X, 
+  int numCoils, int N0, int N1, int n0, int n1, int m );
 void InitializeAcquisition
 ( const DistMatrix<double,         STAR,STAR>& densityComp,
   const DistMatrix<Complex<double>,STAR,STAR>& sensitivity,
-  const DistMatrix<double,STAR,VR>& X, int numCoils, int numTimesteps, 
-  int N0, int N1, int n0, int n1, int m );
+  const DistMatrix<double,         STAR,STAR>& X, 
+  int numCoils, int N0, int N1, int n0, int n1, int m );
 void FinalizeCoilPlans();
 void FinalizeAcquisition();
 
 int NumCoils();
 int NumTimesteps();
-int NumLocalPaths();
 int NumNonUniformPoints();
 int FirstBandwidth();
 int SecondBandwidth();
 
-nfft_plan& LocalCoilPlan( int localPath );
+nfft_plan& CoilPlan( int path );
 
-// M x numCoils*numTimesteps
-const DistMatrix<double,STAR,VR>& CoilPaths();
+// 2*M x numTimesteps
+const DistMatrix<double,STAR,STAR>& CoilPaths();
 
 // M x numTimesteps
 const DistMatrix<double,STAR,STAR>& DensityComp();
