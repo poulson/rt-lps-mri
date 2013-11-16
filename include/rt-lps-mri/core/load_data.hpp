@@ -61,6 +61,11 @@ LoadData
         is.seekg( pos );
         is.read( (char*)data.Buffer(0,jLoc), numNonUniform*2*sizeof(double) );
     }
+#ifndef RELEASE
+    const double frobNorm = FrobeniusNorm( data );
+    if( data.Grid().Rank() == 0 )
+        std::cout << "  Frobenius norm = " << frobNorm << std::endl;
+#endif
 }
 
 } // namespace mri

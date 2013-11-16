@@ -51,6 +51,11 @@ LoadPaths
     paths.ResizeTo( 2*numNonUniform, numTimesteps, 2*numNonUniform );
     is.read
     ( (char*)paths.Buffer(), numNonUniform*numTimesteps*2*sizeof(double) );
+#ifndef RELEASE
+    const double frobNorm = FrobeniusNorm( paths );
+    if( paths.Grid().Rank() == 0 )
+        std::cout << "  Frobenius norm = " << frobNorm << std::endl;
+#endif
 }
 
 } // namespace mri

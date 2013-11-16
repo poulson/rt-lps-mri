@@ -51,6 +51,11 @@ LoadSensitivity
     sensitivity.ResizeTo( N0*N1, numCoils, N0*N1 );
     is.read
     ( (char*)sensitivity.Buffer(), N0*N1*numCoils*2*sizeof(double) );
+#ifndef RELEASE
+    const double frobNorm = FrobeniusNorm( sensitivity );
+    if( sensitivity.Grid().Rank() == 0 )
+        std::cout << "  Frobenius norm = " << frobNorm << std::endl;
+#endif
 }
 
 } // namespace mri

@@ -51,6 +51,11 @@ LoadDensity
     density.ResizeTo( numNonUniform, numTimesteps, numNonUniform );
     is.read
     ( (char*)density.Buffer(), numNonUniform*numTimesteps*sizeof(double) );
+#ifndef RELEASE
+    const double frobNorm = FrobeniusNorm( density );
+    if( density.Grid().Rank() == 0 )
+        std::cout << "  Frobenius norm = " << frobNorm << std::endl;
+#endif
 }
 
 } // namespace mri
