@@ -28,42 +28,42 @@ main( int argc, char* argv[] )
         ProcessInput();
         PrintInputReport();
 
-        DistMatrix<double,         STAR,VR> X;
+        DistMatrix<double,         STAR,VR> paths;
         DistMatrix<Complex<double>,STAR,VR> F, FDirect, FHat, FHatDirect;
 
-        Uniform( X, 2*nnu, width, 0., 0.5 );
-        Sort( X ); 
+        Uniform( paths, 2*nnu, width, 0., 0.5 );
+        Sort( paths ); 
         Uniform( FHat, N0*N1, width );
         if( print )
         {
-            Print( X, "X" );
+            Print( paths, "paths" );
             Print( FHat, "FHat" );
         }
         if( display )
         {
-            Display( X, "X" );
+            Display( paths, "paths" );
             Display( FHat, "FHat" );
         }
 
-        NFFT2D( N0, N1, nnu, n0, n1, m, FHat, X, F );
+        NFFT2D( N0, N1, nnu, n0, n1, m, FHat, paths, F );
         if( print )
             Print( F, "F after forward" );
         if( display )
             Display( F, "F after forward" );
 
-        NFT2D( N0, N1, nnu, FHat, X, FDirect );
+        NFT2D( N0, N1, nnu, FHat, paths, FDirect );
         if( print )
             Print( FDirect, "F after direct forward" );
         if( display )
             Display( FDirect, "F after direct forward" );
 
-        AdjointNFFT2D( N0, N1, nnu, n0, n1, m, F, X, FHat );
+        AdjointNFFT2D( N0, N1, nnu, n0, n1, m, F, paths, FHat );
         if( print )
             Print( FHat, "FHat after adjoint" );
         if( display )
             Display( FHat, "FHat after adjoint" );
 
-        AdjointNFT2D( N0, N1, nnu, F, X, FHatDirect );
+        AdjointNFT2D( N0, N1, nnu, F, paths, FHatDirect );
         if( print )
             Print( FHatDirect, "FHat after direct adjoint" );
         if( display )

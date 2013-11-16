@@ -15,7 +15,7 @@ namespace mri {
 inline void
 LoadPaths
 ( int numNonUniform, int numTimesteps, 
-  std::string filename, DistMatrix<double,STAR,STAR>& X )
+  std::string filename, DistMatrix<double,STAR,STAR>& paths )
 {
 #ifndef RELEASE
     CallStackEntry cse("LoadPaths");
@@ -29,9 +29,9 @@ LoadPaths
         RuntimeError( os.str() );
     }
     
-    X.ResizeTo( 2*numNonUniform, numTimesteps, numNonUniform );
+    paths.ResizeTo( 2*numNonUniform, numTimesteps, numNonUniform );
     is.read
-    ( (char*)X.Buffer(), numNonUniform*numTimesteps*2*sizeof(double) );
+    ( (char*)paths.Buffer(), numNonUniform*numTimesteps*2*sizeof(double) );
 }
 
 } // namespace mri

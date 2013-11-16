@@ -41,24 +41,24 @@ CoilAwareNFT2D
         const int j = rowShift + jLoc*rowStride;
         const int t = j / numCoils;
         nfft_plan& plan = CoilPlan( t );
-        const double* XCol = plan.x;
-        Complex<double>* FCol = F.Buffer(0,jLoc);
-        const Complex<double>* FHatCol = FHat.LockedBuffer(0,jLoc);
+        const double* x = plan.x;
+        Complex<double>* f = F.Buffer(0,jLoc);
+        const Complex<double>* fHat = FHat.LockedBuffer(0,jLoc);
         for( int xi=0; xi<numNonUniform; ++xi )
         {
-            const double x0 = XCol[2*xi+0];
-            const double x1 = XCol[2*xi+1];
+            const double x0 = x[2*xi+0];
+            const double x1 = x[2*xi+1];
             for( int ki=0; ki<N0; ++ki )
             {
                 const double k0 = -N0/2+ki;
                 for( int kj=0; kj<N1; ++kj )
                 {
-                    const Complex<double> fhat = FHatCol[kj+ki*N1];
+                    const Complex<double> phiHat = fHat[kj+ki*N1];
                     const double k1 = -N1/2+kj;
                     const double theta = -2*pi*(x0*k0+x1*k1);
                     const double realPart = cos(theta);
                     const double imagPart = sin(theta);
-                    FCol[xi] += Complex<double>(realPart,imagPart)*fhat;
+                    f[xi] += Complex<double>(realPart,imagPart)*phiHat;
                 }
             }
         }
@@ -97,14 +97,14 @@ CoilAwareAdjointNFT2D
         const int j = rowShift + jLoc*rowStride;
         const int t = j / numCoils;
         nfft_plan& plan = CoilPlan( t );
-        const double* XCol = plan.x;
-        const Complex<double>* FCol = F.LockedBuffer(0,jLoc);
-        Complex<double>* FHatCol = FHat.Buffer(0,jLoc);
+        const double* x = plan.x;
+        const Complex<double>* f = F.LockedBuffer(0,jLoc);
+        Complex<double>* fHat = FHat.Buffer(0,jLoc);
         for( int xi=0; xi<numNonUniform; ++xi )
         {
-            const double x0 = XCol[2*xi+0];
-            const double x1 = XCol[2*xi+1];
-            const Complex<double> f = FCol[xi];
+            const double x0 = x[2*xi+0];
+            const double x1 = x[2*xi+1];
+            const Complex<double> phi = f[xi];
             for( int ki=0; ki<N0; ++ki )
             {
                 const double k0 = -N0/2+ki;
@@ -114,7 +114,7 @@ CoilAwareAdjointNFT2D
                     const double theta = 2*pi*(x0*k0+x1*k1);
                     const double realPart = cos(theta);
                     const double imagPart = sin(theta);
-                    FHatCol[kj+ki*N1] += Complex<double>(realPart,imagPart)*f;
+                    fHat[kj+ki*N1] += Complex<double>(realPart,imagPart)*phi;
                 }
             }
         }

@@ -29,27 +29,27 @@ main( int argc, char* argv[] )
         ProcessInput();
         PrintInputReport();
 
-        DistMatrix<double,STAR,STAR> X;
+        DistMatrix<double,STAR,STAR> paths;
         DistMatrix<Complex<double>,STAR,VR> F, FDirect, FHat, FHatDirect;
 
         // Initialize each column to a 2*nnu length vector of samples from the
         // real ball of radius 0.5 centered at the origin, then sort
-        Uniform( X, 2*nnu, nt, 0., 0.5 );
-        Sort( X ); 
+        Uniform( paths, 2*nnu, nt, 0., 0.5 );
+        Sort( paths ); 
 
         // Initialize the coil plans
-        InitializeCoilPlans( X, nc, N0, N1, n0, n1, m );
+        InitializeCoilPlans( paths, nc, N0, N1, n0, n1, m );
 
         // Generate a random source vector
         Uniform( FHat, N0*N1, nc*nt );
         if( print )
         {
-            Print( X, "X" );
+            Print( paths, "paths" );
             Print( FHat, "FHat" );
         }
         if( display )
         {
-            Display( X, "X" );
+            Display( paths, "paths" );
             Display( FHat, "FHat" );
         }
 

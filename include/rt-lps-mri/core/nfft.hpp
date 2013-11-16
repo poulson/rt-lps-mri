@@ -20,25 +20,25 @@ inline void
 NFFT2D
 ( int N0, int N1, int numNonUniform, int n0, int n1, int m, 
   const DistMatrix<Complex<double>,STAR,VR>& FHat, 
-  const DistMatrix<double,         STAR,VR>& X,
+  const DistMatrix<double,         STAR,VR>& paths,
         DistMatrix<Complex<double>,STAR,VR>& F )
 {
 #ifndef RELEASE
     CallStackEntry cse("NFFT2D");
 #endif
     const int dim = 2;
-    const int width = X.Width();
+    const int width = paths.Width();
 #ifndef RELEASE
     if( N0 % 2 != 0 || N1 % 2 != 0 )
         LogicError("NFFT requires band limits to be even integers\n");
     if( FHat.Height() != N0*N1 )
         LogicError("Invalid FHat height");
-    if( X.Height() != dim*numNonUniform )
-        LogicError("Invalid X height");
-    if( FHat.Width() != X.Width() )
-        LogicError("FHat and X must have the same width");
-    if( FHat.RowAlign() != X.RowAlign() )
-        LogicError("FHat and X are not aligned");
+    if( paths.Height() != dim*numNonUniform )
+        LogicError("Invalid paths height");
+    if( FHat.Width() != paths.Width() )
+        LogicError("FHat and paths must have the same width");
+    if( FHat.RowAlign() != paths.RowAlign() )
+        LogicError("FHat and paths are not aligned");
 #endif
     F.AlignWith( FHat );
     Zeros( F, numNonUniform, width );
@@ -54,9 +54,9 @@ NFFT2D
     for( int jLoc=0; jLoc<locWidth; ++jLoc )
     {
 #ifndef RELEASE
-        // TODO: Ensure this column of X is sorted
+        // TODO: Ensure this column of paths is sorted
 #endif
-        plan.x = const_cast<double*>(X.LockedBuffer(0,jLoc));
+        plan.x = const_cast<double*>(paths.LockedBuffer(0,jLoc));
         nfft_init_guru
         ( &plan, dim, NN, numNonUniform, nn, m, nfftFlags, fftwFlags );
         if( plan.nfft_flags & PRE_ONE_PSI )
@@ -75,25 +75,25 @@ inline void
 AdjointNFFT2D
 ( int N0, int N1, int numNonUniform, int n0, int n1, int m,
   const DistMatrix<Complex<double>,STAR,VR>& F,
-  const DistMatrix<double,         STAR,VR>& X,
+  const DistMatrix<double,         STAR,VR>& paths,
         DistMatrix<Complex<double>,STAR,VR>& FHat )
 {
 #ifndef RELEASE
     CallStackEntry cse("AdjointNFFT2D");
 #endif
     const int dim = 2;
-    const int width = X.Width();
+    const int width = paths.Width();
 #ifndef RELEASE
     if( N0 % 2 != 0 || N1 % 2 != 0 )
         LogicError("NFFT requires band limits to be even integers\n");
     if( F.Height() != numNonUniform )
         LogicError("Invalid F height");
-    if( X.Height() != dim*numNonUniform )
-        LogicError("Invalid X height");
-    if( F.Width() != X.Width() )
-        LogicError("F and X must have the same width");
-    if( F.RowAlign() != X.RowAlign() )
-        LogicError("F and X are not aligned");
+    if( paths.Height() != dim*numNonUniform )
+        LogicError("Invalid paths height");
+    if( F.Width() != paths.Width() )
+        LogicError("F and paths must have the same width");
+    if( F.RowAlign() != paths.RowAlign() )
+        LogicError("F and paths are not aligned");
 #endif
     FHat.AlignWith( F );
     Zeros( FHat, N0*N1, width );
@@ -109,9 +109,9 @@ AdjointNFFT2D
     for( int jLoc=0; jLoc<locWidth; ++jLoc )
     {
 #ifndef RELEASE
-        // TODO: Ensure this column of X is sorted
+        // TODO: Ensure this column of paths is sorted
 #endif
-        plan.x = const_cast<double*>(X.LockedBuffer(0,jLoc));
+        plan.x = const_cast<double*>(paths.LockedBuffer(0,jLoc));
         nfft_init_guru
         ( &plan, dim, NN, numNonUniform, nn, m, nfftFlags, fftwFlags );
         if( plan.nfft_flags & PRE_ONE_PSI )

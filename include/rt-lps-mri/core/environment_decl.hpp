@@ -115,12 +115,12 @@ void ReportException( std::exception& e );
 bool InitializedCoilPlans();
 bool InitializedAcquisition();
 void InitializeCoilPlans
-( const DistMatrix<double,STAR,STAR>& X, 
+( const DistMatrix<double,STAR,STAR>& paths, 
   int numCoils, int N0, int N1, int n0, int n1, int m );
 void InitializeAcquisition
 ( const DistMatrix<double,         STAR,STAR>& densityComp,
   const DistMatrix<Complex<double>,STAR,STAR>& sensitivity,
-  const DistMatrix<double,         STAR,STAR>& X, 
+  const DistMatrix<double,         STAR,STAR>& paths, 
   int numCoils, int N0, int N1, int n0, int n1, int m );
 void FinalizeCoilPlans();
 void FinalizeAcquisition();

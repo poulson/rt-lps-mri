@@ -8,6 +8,7 @@
 */
 #include "rt-lps-mri.hpp"
 using namespace mri;
+using std::string;
 
 int 
 main( int argc, char* argv[] )
@@ -24,35 +25,30 @@ main( int argc, char* argv[] )
         const int n0 = Input("--n0","FFT size in x direction",16);
         const int n1 = Input("--n1","FFT size in y direction",16);
         const int m = Input("--m","cutoff parameter",2);
+        const string sensName = 
+            Input("--sens","sens. filename",string("sensitivity.bin"));
+        const string densName = 
+            Input("--dens","density filename",string("density.bin"));
+        const string pathsName = 
+            Input("--path","paths filename",string("paths.bin"));
+        const string dataName = 
+            Input("--data","data filename",string("data.bin"));
         const bool print = Input("--print","print matrices?",false);
         const bool display = Input("--display","display matrices?",false);
         ProcessInput();
         PrintInputReport();
 
-        // Sample from [0,1] and then have the top half of the matrix sorted
-        // downwards, and the bottom-half upwards. 
         DistMatrix<double,STAR,STAR> densityComp;
-        Uniform( densityComp, nnu, nt, 0.5, 0.5 );
-        {
-            DistMatrix<double,STAR,STAR> densTop, densBot;
-            PartitionDown( densityComp, densTop, densBot, nnu/2 ); 
-            Sort( densTop, DESCENDING );
-            Sort( densBot, ASCENDING );
-        }
+        LoadDensity( nnu, nt, densName, densityComp );
 
-        // Sample from the complex unit ball
         DistMatrix<Complex<double>,STAR,STAR> sensitivity;
-        Uniform( sensitivity, N0*N1, nc, Complex<double>(0.,0.), 1. );
+        LoadSensitivity( N0, N1, nc, sensName, sensitivity );
 
-        // Initialize each column to a 2*nnu length vector of samples from the
-        // real ball of radius 0.5 centered at the origin, then sort
         DistMatrix<double,STAR,STAR> paths;
-        Uniform( paths, 2*nnu, nt, 0., 0.5 );
-        Sort( paths ); 
+        LoadPaths( nnu, nt, pathsName, paths );
 
-        // Generate original data matrix
         DistMatrix<Complex<double>,STAR,VR> data;
-        Uniform( data, nnu, nc*nt );
+        LoadData( nnu, nc, nt, dataName, data );
 
         if( print )
         {

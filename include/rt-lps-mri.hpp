@@ -25,6 +25,7 @@
 #include "rt-lps-mri/core/coil_aware_nfft.hpp"
 #include "rt-lps-mri/core/coil_aware_nft.hpp"
 #include "rt-lps-mri/core/temporal_fft.hpp"
+#include "rt-lps-mri/core/load_data.hpp"
 #include "rt-lps-mri/core/load_density.hpp"
 #include "rt-lps-mri/core/load_paths.hpp"
 #include "rt-lps-mri/core/load_sensitivity.hpp"
