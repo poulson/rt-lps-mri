@@ -41,7 +41,7 @@ LoadDensity
            << " x " << sizeof(double) << " = " << numExpected << std::endl;
         RuntimeError( os.str() );
     }
-    is.seekg( 0, std::ios::begin );
+    is.seekg( 0, std::ios::beg );
 #ifndef RELEASE
     if( density.Grid().Rank() == 0 )
         std::cout << "Density file was " << numBytes << " as expected"
