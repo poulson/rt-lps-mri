@@ -31,17 +31,22 @@ LoadPaths
 
     // Make sure the file is of the right size
     is.seekg( 0, std::ios::end );
-    const long numBytes = is.tellg();
-    if( numBytes != 2*numNonUniform*numTimesteps*sizeof(double) )
+    const int numBytes = is.tellg();
+    const int numExpected = 2*numNonUniform*numTimesteps*sizeof(double);
+    if( numBytes != numExpected )
     {
         std::ostringstream os;
         os << "File was " << numBytes << " instead of 2*"
            << numNonUniform << " x " << numTimesteps
-           << " x 2*" << sizeof(double) << " = "    
-           << 2*numNonUniform*numTimesteps*sizeof(double) << std::endl;
+           << " x 2*" << sizeof(double) << " = " << numExpected << std::endl;
         RuntimeError( os.str() );
     }
     is.seekg( 0, std::ios::end );
+#ifndef RELEASE
+    if( paths.Grid().Rank() == 0 )
+        std::cout << "Paths file was " << numBytes << " as expected"
+                  << std::endl;
+#endif
     
     paths.ResizeTo( 2*numNonUniform, numTimesteps, 2*numNonUniform );
     is.read

@@ -31,17 +31,23 @@ LoadData
 
     // Make sure the file is of the right size
     is.seekg( 0, std::ios::end ); 
-    const long numBytes = is.tellg();
-    if( numBytes != numNonUniform*numCoils*numTimesteps*2*sizeof(double) )
+    const int numBytes = is.tellg();
+    const int numExpected = 
+        numNonUniform*numCoils*numTimesteps*2*sizeof(double);
+    if( numBytes != numExpected )
     {
         std::ostringstream os;
         os << "File was " << numBytes << " instead of "
            << numNonUniform << " x " << numCoils << " x " << numTimesteps
-           << " x 2*" << sizeof(double) << " = "  
-           << numNonUniform*numCoils*numTimesteps*2*sizeof(double) << std::endl;
+           << " x 2*" << sizeof(double) << " = " << numExpected << std::endl;
         RuntimeError( os.str() );
     }
     is.seekg( 0, std::ios::end );
+#ifndef RELEASE
+    if( data.Grid().Rank() == 0 )
+        std::cout << "Data file was " << numBytes << " as expected"
+                  << std::endl;
+#endif
 
     data.ResizeTo( numNonUniform, numCoils*numTimesteps, numNonUniform );
     const int rowShift = data.RowShift();

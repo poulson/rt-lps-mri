@@ -31,17 +31,22 @@ LoadSensitivity
 
     // Make sure the file is of the right size
     is.seekg( 0, std::ios::end );
-    const long numBytes = is.tellg();
-    if( numBytes != N0*N1*numCoils*2*sizeof(double) )
+    const int numBytes = is.tellg();
+    const int numExpected = N0*N1*numCoils*2*sizeof(double);
+    if( numBytes != numExpected )
     {
         std::ostringstream os;
         os << "File was " << numBytes << " instead of "
            << N0 << " x " << N1 << " x " << numCoils
-           << " x 2*" << sizeof(double) << " = "    
-           << N0*N1*numCoils*2*sizeof(double) << std::endl;
+           << " x 2*" << sizeof(double) << " = " << numExpected << std::endl;  
         RuntimeError( os.str() );
     }
     is.seekg( 0, std::ios::end );
+#ifndef RELEASE
+    if( sensitivity.Grid().Rank() == 0 )
+        std::cout << "Sensitivity file was " << numBytes << " as expected"
+                  << std::endl;
+#endif
     
     sensitivity.ResizeTo( N0*N1, numCoils, N0*N1 );
     is.read

@@ -31,17 +31,22 @@ LoadDensity
 
     // Make sure the file is of the right size
     is.seekg( 0, std::ios::end );
-    const long numBytes = is.tellg();
-    if( numBytes != numNonUniform*numTimesteps*sizeof(double) )
+    const int numBytes = is.tellg();
+    const int numExpected = numNonUniform*numTimesteps*sizeof(double);
+    if( numBytes != numExpected )
     {
         std::ostringstream os;
         os << "File was " << numBytes << " instead of "
            << numNonUniform << " x " << numTimesteps
-           << " x " << sizeof(double) << " = "    
-           << numNonUniform*numTimesteps*sizeof(double) << std::endl;
+           << " x " << sizeof(double) << " = " << numExpected << std::endl;
         RuntimeError( os.str() );
     }
     is.seekg( 0, std::ios::end );
+#ifndef RELEASE
+    if( density.Grid().Rank() == 0 )
+        std::cout << "Density file was " << numBytes << " as expected"
+                  << std::endl;
+#endif
     
     density.ResizeTo( numNonUniform, numTimesteps, numNonUniform );
     is.read
