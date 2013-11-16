@@ -41,7 +41,7 @@ LoadPaths
            << " x 2*" << sizeof(double) << " = " << numExpected << std::endl;
         RuntimeError( os.str() );
     }
-    is.seekg( 0, std::ios::end );
+    is.seekg( 0, std::ios::begin );
 #ifndef RELEASE
     if( paths.Grid().Rank() == 0 )
         std::cout << "Paths file was " << numBytes << " as expected"

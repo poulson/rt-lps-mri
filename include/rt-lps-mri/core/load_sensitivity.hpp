@@ -41,7 +41,7 @@ LoadSensitivity
            << " x 2*" << sizeof(double) << " = " << numExpected << std::endl;  
         RuntimeError( os.str() );
     }
-    is.seekg( 0, std::ios::end );
+    is.seekg( 0, std::ios::begin );
 #ifndef RELEASE
     if( sensitivity.Grid().Rank() == 0 )
         std::cout << "Sensitivity file was " << numBytes << " as expected"

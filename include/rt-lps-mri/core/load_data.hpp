@@ -42,7 +42,7 @@ LoadData
            << " x 2*" << sizeof(double) << " = " << numExpected << std::endl;
         RuntimeError( os.str() );
     }
-    is.seekg( 0, std::ios::end );
+    is.seekg( 0, std::ios::begin );
 #ifndef RELEASE
     if( data.Grid().Rank() == 0 )
         std::cout << "Data file was " << numBytes << " as expected"
