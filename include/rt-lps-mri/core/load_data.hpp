@@ -29,6 +29,20 @@ LoadData
         RuntimeError( os.str() );
     }
 
+    // Make sure the file is of the right size
+    is.seekg( 0, std::ios::end ); 
+    const long numBytes = is.tellg();
+    if( numBytes != numNonUniform*numCoils*numTimesteps*2*sizeof(double) )
+    {
+        std::ostringstream os;
+        os << "File was " << numBytes << " instead of "
+           << numNonUniform << " x " << numCoils << " x " << numTimesteps
+           << " x 2*" << sizeof(double) << " = "  
+           << numNonUniform*numCoils*numTimesteps*2*sizeof(double) << std::endl;
+        RuntimeError( os.str() );
+    }
+    is.seekg( 0, std::ios::end );
+
     data.ResizeTo( numNonUniform, numCoils*numTimesteps, numNonUniform );
     const int rowShift = data.RowShift();
     const int rowStride = data.RowStride();

@@ -28,8 +28,22 @@ LoadPaths
         os << "Could not open " << filename;
         RuntimeError( os.str() );
     }
+
+    // Make sure the file is of the right size
+    is.seekg( 0, std::ios::end );
+    const long numBytes = is.tellg();
+    if( numBytes != 2*numNonUniform*numTimesteps*sizeof(double) )
+    {
+        std::ostringstream os;
+        os << "File was " << numBytes << " instead of 2*"
+           << numNonUniform << " x " << numTimesteps
+           << " x 2*" << sizeof(double) << " = "    
+           << 2*numNonUniform*numTimesteps*sizeof(double) << std::endl;
+        RuntimeError( os.str() );
+    }
+    is.seekg( 0, std::ios::end );
     
-    paths.ResizeTo( 2*numNonUniform, numTimesteps, numNonUniform );
+    paths.ResizeTo( 2*numNonUniform, numTimesteps, 2*numNonUniform );
     is.read
     ( (char*)paths.Buffer(), numNonUniform*numTimesteps*2*sizeof(double) );
 }

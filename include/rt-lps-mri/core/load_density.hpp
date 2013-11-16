@@ -28,6 +28,20 @@ LoadDensity
         os << "Could not open " << filename;
         RuntimeError( os.str() );
     }
+
+    // Make sure the file is of the right size
+    is.seekg( 0, std::ios::end );
+    const long numBytes = is.tellg();
+    if( numBytes != numNonUniform*numTimesteps*sizeof(double) )
+    {
+        std::ostringstream os;
+        os << "File was " << numBytes << " instead of "
+           << numNonUniform << " x " << numTimesteps
+           << " x " << sizeof(double) << " = "    
+           << numNonUniform*numTimesteps*sizeof(double) << std::endl;
+        RuntimeError( os.str() );
+    }
+    is.seekg( 0, std::ios::end );
     
     density.ResizeTo( numNonUniform, numTimesteps, numNonUniform );
     is.read

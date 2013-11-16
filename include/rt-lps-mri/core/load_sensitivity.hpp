@@ -28,6 +28,20 @@ LoadSensitivity
         os << "Could not open " << filename;
         RuntimeError( os.str() );
     }
+
+    // Make sure the file is of the right size
+    is.seekg( 0, std::ios::end );
+    const long numBytes = is.tellg();
+    if( numBytes != N0*N1*numCoils*2*sizeof(double) )
+    {
+        std::ostringstream os;
+        os << "File was " << numBytes << " instead of "
+           << N0 << " x " << N1 << " x " << numCoils
+           << " x 2*" << sizeof(double) << " = "    
+           << N0*N1*numCoils*2*sizeof(double) << std::endl;
+        RuntimeError( os.str() );
+    }
+    is.seekg( 0, std::ios::end );
     
     sensitivity.ResizeTo( N0*N1, numCoils, N0*N1 );
     is.read
