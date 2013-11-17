@@ -25,6 +25,11 @@ main( int argc, char* argv[] )
         const int n0 = Input("--n0","FFT size in x direction",16);
         const int n1 = Input("--n1","FFT size in y direction",16);
         const int m = Input("--m","cutoff parameter",2);
+        const double lambdaL = Input("--lambdaL","low-rank scale",0.025);
+        const double lambdaSRel = Input("--lambdaSRel","sparse rel scale",0.5);
+        const double relTol = Input("--relTol","relative L+S tolerance",0.0025);
+        const int maxIts = Input("--maxIts","max L+S iterations",100);
+        const bool tryTSQR = Input("--tryTSQR","try Tall-Skinny QR?",false);
         const string sensName = 
             Input("--sens","sens. filename",string("sensitivity.bin"));
         const string densName = 
@@ -69,21 +74,18 @@ main( int argc, char* argv[] )
         InitializeAcquisition
         ( densityComp, sensitivity, paths, nc, N0, N1, n0, n1, m );
 
-        // Apply the adjoint of the acquisition operator
-        DistMatrix<Complex<double>,VC,STAR> M;
-        AdjointAcquisition( data, M );
+        DistMatrix<Complex<double>,VC,STAR> L, S;
+        LPS( data, L, S, lambdaL, lambdaSRel, relTol, maxIts, tryTSQR );
         if( print )
-            Print( M, "M := E' D" );
+        {
+            Print( L, "L" );
+            Print( S, "S" );
+        }
         if( display )
-            Display( M, "M := E' D" );
-
-        // Apply acquisition operator
-        DistMatrix<Complex<double>,STAR,VR> R;
-        Acquisition( M, R );
-        if( print )
-            Print( R, "R := E M = E E' D" );
-        if( display )
-            Display( R, "R := E M = E E' D" );
+        {
+            Display( L, "L" );
+            Display( S, "S" );
+        }
     }
     catch( std::exception& e ) { ReportException(e); }
 

@@ -16,8 +16,8 @@ LPS
 ( const DistMatrix<Complex<double>,STAR,VR>& D,
         DistMatrix<Complex<double>,VC,STAR>& L,
         DistMatrix<Complex<double>,VC,STAR>& S,
-  double lambdaL, double lambdaS,
-  int maxIts=100, double relTol=0.0025,
+  double lambdaL=0.025, double lambdaSRelMaxM=0.5,
+  double relTol=0.0025, int maxIts=100,
   bool tryTSQR=false )
 {
 #ifndef RELEASE
@@ -33,6 +33,10 @@ LPS
     // M := E' D
     DistMatrix<F,VC,STAR> M( D.Grid() );
     AdjointAcquisition( D, M );
+
+    // Set lambdaS relative to || M ||_max
+    const double maxM = MaxNorm( M );
+    const double lambdaS = lambdaSRelMaxM*maxM;
 
     // Align L and S to M, and set S := 0
     L.SetGrid( M.Grid() );
@@ -80,6 +84,11 @@ LPS
         const Real frobM0 = FrobeniusNorm( M0 );        
         Axpy( F(-1), M, M0 );
         const Real frobUpdate = FrobeniusNorm( M0 );
+#ifndef RELEASE
+        if( D.Grid().Rank() == 0 )
+            std::cout << "After " << numIts << " its: frobM0=" << frobM0
+                      << ", frobUpdate=" << frobUpdate << std::endl;
+#endif
         if( numIts == maxIts || frobUpdate < relTol*frobM0 )
             break;
     }
