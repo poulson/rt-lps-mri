@@ -48,19 +48,18 @@ ContractionPrescaling( DistMatrix<Complex<double>,STAR,VR>& FHat )
     CallStackEntry cse("acquisition::ContractionPrescaling");
 #endif
     const int numCoils = NumCoils();
-    const auto& sensitivity = Sensitivity();
-    const auto& sensitivityScalings = SensitivityScalings();
     const int height = FHat.Height();
     const int localWidth = FHat.LocalWidth();
     const int rowShift = FHat.RowShift();
     const int rowStride = FHat.RowStride();
+    const auto& sensitivity = Sensitivity();
+    const auto senseScaleCol = SensitivityScalings().LockedBuffer();
     for( int jLoc=0; jLoc<localWidth; ++jLoc )
     {
         const int j = rowShift + jLoc*rowStride;
         const int coil = j % numCoils; 
         auto fHat = FHat.Buffer(0,jLoc);
         const auto senseCol = sensitivity.LockedBuffer(0,coil);
-        const auto senseScaleCol = sensitivityScalings.LockedBuffer();
         for( int i=0; i<height; ++i )
             fHat[i] *= Conj(senseCol[i])/senseScaleCol[i];    
     }
@@ -85,16 +84,16 @@ CoilContraction
     images_STAR_VR.AlignWith( FHat );
     Zeros( images_STAR_VR, height, numTimesteps );
 
-    const int localNewWidth = images_STAR_VR.LocalWidth();
     const int localWidth = FHat.LocalWidth();
+    const int localNewWidth = images_STAR_VR.LocalWidth();
 
     // Determine the number of entries we send to each process
     std::vector<int> sendSizes( rowStride, 0 );
     for( int jLoc=0; jLoc<localWidth; ++jLoc )
     {
         const int j = rowShift + jLoc*rowStride;
-        const int jNew = j / numCoils;
-        const int newOwner = (jNew+rowAlign) % rowStride;
+        const int t = j / numCoils;
+        const int newOwner = (t+rowAlign) % rowStride;
         sendSizes[newOwner] += height;
     }
 
@@ -102,8 +101,8 @@ CoilContraction
     std::vector<int> recvSizes( rowStride, 0 );
     for( int jLoc=0; jLoc<localNewWidth; ++jLoc )
     {
-        const int jNew = rowShift + jLoc*rowStride;
-        for( int j=jNew*numCoils; j<(jNew+1)*numCoils; ++j )
+        const int t = rowShift + jLoc*rowStride;
+        for( int j=t*numCoils; j<(t+1)*numCoils; ++j )
         {
             const int owner = (j+rowAlign) % rowStride;
             recvSizes[owner] += height;
@@ -127,8 +126,8 @@ CoilContraction
     for( int jLoc=0; jLoc<localWidth; ++jLoc )
     {
         const int j = rowShift + jLoc*rowStride;
-        const int jNew = j / numCoils;
-        const int newOwner = (jNew+rowAlign) % rowStride;
+        const int t = j / numCoils;
+        const int newOwner = (t+rowAlign) % rowStride;
         elem::MemCopy
         ( &sendBuf[offsets[newOwner]], 
           FHat.LockedBuffer(0,jLoc), height );
@@ -149,9 +148,9 @@ CoilContraction
     offsets = recvOffsets;
     for( int jLoc=0; jLoc<localNewWidth; ++jLoc )
     {
-        const int jNew = rowShift + jLoc*rowStride;
+        const int t = rowShift + jLoc*rowStride;
         auto imageCol = images_STAR_VR.Buffer(0,jLoc);
-        for( int j=jNew*numCoils; j<(jNew+1)*numCoils; ++j )
+        for( int j=t*numCoils; j<(t+1)*numCoils; ++j )
         {
             const int owner = (j+rowAlign) % rowStride;
             for( int i=0; i<height; ++i )

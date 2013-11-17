@@ -33,9 +33,8 @@ main( int argc, char* argv[] )
         DistMatrix<Complex<double>,STAR,VR> F, FDirect, FHat, FHatDirect;
 
         // Initialize each column to a 2*nnu length vector of samples from the
-        // real ball of radius 0.5 centered at the origin, then sort
+        // real ball of radius 0.5 centered at the origin
         Uniform( paths, 2*nnu, nt, 0., 0.5 );
-        Sort( paths ); 
 
         // Initialize the coil plans
         InitializeCoilPlans( paths, nc, N0, N1, n0, n1, m );

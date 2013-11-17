@@ -32,7 +32,6 @@ main( int argc, char* argv[] )
         DistMatrix<Complex<double>,STAR,VR> F, FDirect, FHat, FHatDirect;
 
         Uniform( paths, 2*nnu, width, 0., 0.5 );
-        Sort( paths ); 
         Uniform( FHat, N0*N1, width );
         if( print )
         {

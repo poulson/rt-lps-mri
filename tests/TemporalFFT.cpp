@@ -35,7 +35,6 @@ main( int argc, char* argv[] )
         // Initialize the coil plans
         DistMatrix<double,STAR,STAR> paths;
         Uniform( paths, 2*nnu, nt, 0., 0.5 );
-        Sort( paths );
         InitializeCoilPlans( paths, nc, N0, N1, n0, n1, m );
 
         // Generate a random matrix to apply the temporal FFT's to

@@ -45,10 +45,9 @@ main( int argc, char* argv[] )
         Uniform( sensitivity, N0*N1, nc, Complex<double>(0.,0.), 1. );
 
         // Initialize each column to a 2*nnu length vector of samples from the
-        // real ball of radius 0.5 centered at the origin, then sort
+        // real ball of radius 0.5 centered at the origin
         DistMatrix<double,STAR,STAR> paths;
         Uniform( paths, 2*nnu, nt, 0., 0.5 );
-        Sort( paths ); 
 
         // Generate original data matrix
         DistMatrix<Complex<double>,STAR,VR> data;

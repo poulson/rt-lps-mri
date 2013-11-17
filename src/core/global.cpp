@@ -181,13 +181,12 @@ void InitializeCoilPlans
     ::firstBandwidth = N0;
     ::secondBandwidth = N1;
 
-#ifndef RELEASE
-    // TODO: Ensure that each column of X is sorted
-#endif
     ::coilPaths = new DistMatrix<double,STAR,STAR>( X );
 
     int NN[dim] = { N0, N1 };
     int nn[dim] = { n0, n1 };
+
+    // TODO: Sort paths for better cache reusage?
     unsigned nfftFlags = PRE_PHI_HUT| PRE_FULL_PSI| FFTW_INIT| FFT_OUT_OF_PLACE;
     unsigned fftwFlags = FFTW_MEASURE| FFTW_DESTROY_INPUT;
 
@@ -223,8 +222,20 @@ void InitializeAcquisition
 #endif
     InitializeCoilPlans( X, numCoils, N0, N1, n0, n1, m );
 
-    ::densityComp = new DistMatrix<double,         STAR,STAR>( dens );
-    ::sensitivity = new DistMatrix<Complex<double>,STAR,STAR>( sens );
+    ::densityComp = new DistMatrix<double,STAR,STAR>( dens );
+
+    // We have to rearrange sensitivity to be row-major instead of column-major
+    // in order to be compatible with NFFT3's row-major image ordering
+    ::sensitivity = new DistMatrix<Complex<double>,STAR,STAR>( sens.Grid() );
+    Zeros( *::sensitivity, N0*N1, numCoils );
+    for( int c=0; c<numCoils; ++c )
+    {
+        auto newCol = ::sensitivity->Buffer(0,c);
+        const auto oldCol = sens.LockedBuffer(0,c);
+        for( int j0=0; j0<N0; ++j0 )
+            for( int j1=0; j1<N1; ++j1 )
+                newCol[j1+j0*N1] = oldCol[j0+j1*N0];
+    } 
 
     ::sensitivityScalings = new DistMatrix<double,STAR,STAR>( sens.Grid() );
     Zeros( *::sensitivityScalings, N0*N1, 1 );
