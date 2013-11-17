@@ -38,6 +38,14 @@ LPS
     const double maxM = MaxNorm( M );
     const double lambdaS = lambdaSRelMaxM*maxM;
 
+#ifndef RELEASE
+    const double frobM = FrobeniusNorm( M );
+    if( D.Grid().Rank() == 0 )
+        std::cout << "|| M=E'D ||_F = " << frobM << "\n"
+                  << "lambdaL=" << lambdaL << ", lambdaS=" << lambdaS
+                  << std::endl;
+#endif
+
     // Align L and S to M, and set S := 0
     L.SetGrid( M.Grid() );
     S.SetGrid( M.Grid() );
@@ -57,9 +65,9 @@ LPS
         Axpy( F(-1), S, L );
         int rank;
         if( tryTSQR )
-            rank = elem::svt::TSQR( L, lambdaL );
+            rank = elem::svt::TSQR( L, lambdaL, true );
         else 
-            rank = elem::svt::TallCross( L, lambdaL );
+            rank = elem::svt::TallCross( L, lambdaL, true );
 
         // S := TransformedST(M-L)
         // TODO: Add ability to use TV instead of a temporal FFT
@@ -89,12 +97,16 @@ LPS
         Axpy( F(-1), M, M0 );
         const Real frobUpdate = FrobeniusNorm( M0 );
 #ifndef RELEASE
+        const double frobL = FrobeniusNorm( L );
+        const double frobS = FrobeniusNorm( S );
         if( D.Grid().Rank() == 0 )
             std::cout << "After " << numIts << " its: \n"
-                      << "  rank=" << rank << "\n"
-                      << "  numNonzeros=" << numNonzeros << "\n"
-                      << "  frobM0=" << frobM0 << "\n"
-                      << "  frobUpdate=" << frobUpdate << std::endl;
+                      << "  rank(L)      = " << rank << "\n"
+                      << "  nnz(TS)      = " << numNonzeros << "\n"
+                      << "  || L    ||_F = " << frobL << "\n"
+                      << "  || S    ||_F = " << frobS << "\n"
+                      << "  || M0   ||_F = " << frobM0 << "\n"
+                      << "  || M-M0 ||_F = " << frobUpdate << std::endl;
 #endif
         if( numIts == maxIts || frobUpdate < relTol*frobM0 )
             break;
