@@ -54,8 +54,8 @@ Scatter
     std::vector<int> sendSizes( rowStride, 0 );
     for( int jLoc=0; jLoc<localOrigWidth; ++jLoc )
     {
-        const int jOrig = rowShift + jLoc*rowStride;
-        for( int j=jOrig*numCoils; j<(jOrig+1)*numCoils; ++j )
+        const int t = rowShift + jLoc*rowStride;
+        for( int j=t*numCoils; j<(t+1)*numCoils; ++j )
         {
             const int owner = (j+rowAlign) % rowStride;
             sendSizes[owner] += height;
@@ -67,8 +67,8 @@ Scatter
     for( int jLoc=0; jLoc<localWidth; ++jLoc )
     {
         const int j = rowShift + jLoc*rowStride;
-        const int jOrig = j / numCoils;
-        const int origOwner = (jOrig+rowAlign) % rowStride;
+        const int t = j / numCoils;
+        const int origOwner = (t+rowAlign) % rowStride;
         recvSizes[origOwner] += height;
     }
 
@@ -88,8 +88,8 @@ Scatter
     std::vector<int> offsets = sendOffsets;
     for( int jLoc=0; jLoc<localOrigWidth; ++jLoc )
     {
-        const int jOrig = rowShift + jLoc*rowStride;
-        for( int j=jOrig*numCoils; j<(jOrig+1)*numCoils; ++j )
+        const int t = rowShift + jLoc*rowStride;
+        for( int j=t*numCoils; j<(t+1)*numCoils; ++j )
         {
             const int owner = (j+rowAlign) % rowStride;
             elem::MemCopy
@@ -114,8 +114,8 @@ Scatter
     for( int jLoc=0; jLoc<localWidth; ++jLoc )
     {
         const int j = rowShift + jLoc*rowStride;
-        const int jOrig = j / numCoils;
-        const int origOwner = (jOrig+rowAlign) % rowStride;
+        const int t = j / numCoils;
+        const int origOwner = (t+rowAlign) % rowStride;
         elem::MemCopy
         ( scatteredImages.Buffer(0,jLoc),
           &recvBuf[offsets[origOwner]], height );
@@ -124,11 +124,10 @@ Scatter
 }
 
 inline void
-CompensateDensities
-( DistMatrix<Complex<double>,STAR,VR>& scatteredImages )
+ScaleBySensitivities( DistMatrix<Complex<double>,STAR,VR>& scatteredImages )
 {
 #ifndef RELEASE
-    CallStackEntry cse("acquisition::CompensateDensities");
+    CallStackEntry cse("acquisition::ScaleBySensitivities");
 #endif
     const int numCoils = NumCoils();
     const int height = scatteredImages.Height();
@@ -138,11 +137,11 @@ CompensateDensities
     for( int jLoc=0; jLoc<localWidth; ++jLoc )
     {
         const int j = rowShift + jLoc*rowStride;
-        const int time = j / numCoils; // TODO: use mapping jLoc -> time?
+        const int coil = j % numCoils; // TODO: use mapping jLoc -> coil?
         auto image = scatteredImages.Buffer(0,jLoc);
-        const auto densities = DensityComp().LockedBuffer(0,time);
+        const auto senseCol = Sensitivity().LockedBuffer(0,coil);
         for( int i=0; i<height; ++i )
-            image[i] *= densities[i];
+            image[i] *= senseCol[i];
     }
 }
 
@@ -160,8 +159,8 @@ Acquisition
     DistMatrix<Complex<double>,STAR,VR> scatteredImages( images.Grid() );
     acquisition::Scatter( images, scatteredImages );
 
-    // Apply the density compensations
-    acquisition::CompensateDensities( scatteredImages ); 
+    // Scale by the coil sensitivities
+    acquisition::ScaleBySensitivities( scatteredImages ); 
 
     // Finish the transformation
     CoilAwareNFFT2D( scatteredImages, F );
