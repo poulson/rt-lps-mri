@@ -17,12 +17,12 @@ namespace mri {
 namespace acquisition {
 
 inline void
-ScaleBySensitivities
+ScaleByDensities
 ( const DistMatrix<Complex<double>,STAR,VR>& F,
         DistMatrix<Complex<double>,STAR,VR>& scaledF )
 {
 #ifndef RELEASE
-    CallStackEntry cse("acquisition::ScaleBySensitivities");
+    CallStackEntry cse("acquisition::ScaleByDensities");
 #endif
     const int numCoils = NumCoils();
     const int height = F.Height();
@@ -35,9 +35,9 @@ ScaleBySensitivities
         const int j = rowShift + jLoc*rowStride;
         const int time = j / numCoils; // TODO: use mapping jLoc -> time?
         auto fImage = scaledF.Buffer(0,jLoc);
-        const auto sensitivity = Sensitivity().LockedBuffer(0,time);
+        const auto density = DensityComp().LockedBuffer(0,time);
         for( int i=0; i<height; ++i )
-            fImage[i] *= sensitivity[i];
+            fImage[i] *= density[i];
     }
 }
 
@@ -174,7 +174,7 @@ AdjointAcquisition
 #endif
     // Pre-scale the k-space data by the coil sensitivities
     DistMatrix<Complex<double>,STAR,VR> scaledF( F.Grid() );
-    acquisition::ScaleBySensitivities( F, scaledF );
+    acquisition::ScaleByDensities( F, scaledF );
 
     // Transform each k-space vector into the image domain
     DistMatrix<Complex<double>,STAR,VR> FHat( F.Grid() );

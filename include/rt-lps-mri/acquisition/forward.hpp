@@ -138,9 +138,9 @@ CompensateDensities
     for( int jLoc=0; jLoc<localWidth; ++jLoc )
     {
         const int j = rowShift + jLoc*rowStride;
-        const int coil = j % numCoils; // TODO: use mapping jLoc -> coil?
+        const int time = j / numCoils; // TODO: use mapping jLoc -> time?
         auto image = scatteredImages.Buffer(0,jLoc);
-        const auto densities = DensityComp().LockedBuffer(0,coil);
+        const auto densities = DensityComp().LockedBuffer(0,time);
         for( int i=0; i<height; ++i )
             image[i] *= densities[i];
     }
