@@ -55,10 +55,11 @@ LPS
         // L := SVT(M-S,lambdaL)
         L = M;
         Axpy( F(-1), S, L );
+        int rank;
         if( tryTSQR )
-            elem::svt::TSQR( L, lambdaL );
+            rank = elem::svt::TSQR( L, lambdaL );
         else 
-            elem::svt::TallCross( L, lambdaL );
+            rank = elem::svt::TallCross( L, lambdaL );
 
         // S := TransformedST(M-L)
         // TODO: Add ability to use TV instead of a temporal FFT
@@ -66,6 +67,9 @@ LPS
         Axpy( F(-1), L, S );
         TemporalFFT( S );
         elem::SoftThreshold( S, lambdaS );
+#ifndef RELEASE
+        const int numNonzeros = ZeroNorm( S );
+#endif
         TemporalAdjointFFT( S );
 
         // M0 := M
@@ -86,8 +90,11 @@ LPS
         const Real frobUpdate = FrobeniusNorm( M0 );
 #ifndef RELEASE
         if( D.Grid().Rank() == 0 )
-            std::cout << "After " << numIts << " its: frobM0=" << frobM0
-                      << ", frobUpdate=" << frobUpdate << std::endl;
+            std::cout << "After " << numIts << " its: \n"
+                      << "  rank=" << rank << "\n"
+                      << "  numNonzeros=" << numNonzeros << "\n"
+                      << "  frobM0=" << frobM0 << "\n"
+                      << "  frobUpdate=" << frobUpdate << std::endl;
 #endif
         if( numIts == maxIts || frobUpdate < relTol*frobM0 )
             break;
