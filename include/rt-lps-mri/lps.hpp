@@ -16,20 +16,20 @@ namespace lps {
 inline void
 UpdateZ
 ( double clipRadius,
-  const DistMatrix<Complex<double>,VC,STAR>& B, 
+  const DistMatrix<Complex<double>,VC,STAR>& S, 
         DistMatrix<Complex<double>,VC,STAR>& Z )
 {
 #ifndef RELEASE
     CallStackEntry cse("lps::UpdateZ");
 #endif
-    const int numTimesteps = B.Width();
-    const int localHeight = B.LocalHeight();
+    const int numTimesteps = S.Width();
+    const int localHeight = S.LocalHeight();
     for( int iLoc=0; iLoc<localHeight; ++iLoc )
     {
         for( int j=0; j<numTimesteps-1; ++j )
         {
-            const Complex<double> curr = B.GetLocal(iLoc,j);
-            const Complex<double> next = B.GetLocal(iLoc,j+1);
+            const Complex<double> curr = S.GetLocal(iLoc,j);
+            const Complex<double> next = S.GetLocal(iLoc,j+1);
             Z.UpdateLocal( iLoc, j, 0.25*(next-curr) ); 
             // Clip magnitude to be less than or equal to clipRadius
             const Complex<double> xi = Z.GetLocal(iLoc,j);
@@ -97,9 +97,13 @@ LPS
     const double lambdaS = lambdaSRelMaxM*maxM;
 
 #ifndef RELEASE
+    DistMatrix<F,STAR,VR> R( M.Grid() );
+    Acquisition( M, R );
     const double frobM = FrobeniusNorm( M );
+    const double frobR = FrobeniusNorm( R );
     if( D.Grid().Rank() == 0 )
-        std::cout << "|| M=E'D ||_F = " << frobM << "\n"
+        std::cout << "|| M= E'D ||_F = " << frobM << "\n"
+                  << "|| R=EE'D ||_F = " << frobR << "\n"
                   << "lambdaL=" << lambdaL << ", lambdaS=" << lambdaS
                   << std::endl;
 #endif
@@ -121,10 +125,12 @@ LPS
 
     int numIts=0;
     DistMatrix<F,VC,STAR> M0( M.Grid() );
-    DistMatrix<F,STAR,VR> R( M.Grid() );
     while( true )
     {
         ++numIts;
+
+        // M0 := M
+        M0 = M;
 
         // L := SVT(M-S,lambdaL)
         L = M;
@@ -155,9 +161,6 @@ LPS
             TemporalAdjointFFT( S );
         }
 
-        // M0 := M
-        M0 = M;
-
         // M := L + S - E'(E(L+S)-D)
         M = L;
         Axpy( F(1), S, M );
@@ -181,7 +184,9 @@ LPS
                       << "  || L    ||_F = " << frobL << "\n"
                       << "  || S    ||_F = " << frobS << "\n"
                       << "  || M0   ||_F = " << frobM0 << "\n"
-                      << "  || M-M0 ||_F = " << frobUpdate << std::endl;
+                      << "  || M-M0 ||_F = " << frobUpdate << "\n"
+                      << "  || M-M0 ||_F / || M ||_F = " << frobUpdate/frobM0
+                      << std::endl;
 #endif
         if( numIts == maxIts || frobUpdate < relTol*frobM0 )
             break;
