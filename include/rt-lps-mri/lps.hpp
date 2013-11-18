@@ -11,11 +11,69 @@
 
 namespace mri {
 
+namespace lps {
+
+inline void
+UpdateZ
+( double clipRadius,
+  const DistMatrix<Complex<double>,VC,STAR>& B, 
+        DistMatrix<Complex<double>,VC,STAR>& Z )
+{
+#ifndef RELEASE
+    CallStackEntry cse("lps::UpdateZ");
+#endif
+    const int numTimesteps = B.Width();
+    const int localHeight = B.LocalHeight();
+    for( int iLoc=0; iLoc<localHeight; ++iLoc )
+    {
+        for( int j=0; j<numTimesteps-1; ++j )
+        {
+            const Complex<double> curr = B.GetLocal(iLoc,j);
+            const Complex<double> next = B.GetLocal(iLoc,j+1);
+            Z.UpdateLocal( iLoc, j, 0.25*(next-curr) ); 
+            // Clip magnitude to be less than or equal to lambdaS
+            const Complex<double> xi = Z.GetLocal(iLoc,j);
+            const double xiAbs = Abs(xi);
+            if( xiAbs > clipRadius )
+                Z.SetLocal( iLoc, j, xi*(clipRadius/xiAbs) );    
+        }
+    }
+}
+
+inline void
+SubtractAdjDz
+( const DistMatrix<Complex<double>,VC,STAR>& Z,
+        DistMatrix<Complex<double>,VC,STAR>& S )
+{
+#ifndef RELEASE
+    CallStackEntry cse("lps::SubtractAdjDz");
+#endif
+    const int numTimesteps = S.Width();
+    const int localHeight = S.LocalHeight();
+    for( int iLoc=0; iLoc<localHeight; ++iLoc )
+    {
+        // Add the first column of Z to the first column of S
+        S.UpdateLocal( iLoc, 0, Z.GetLocal(iLoc,0) );
+        // Subtract the last column of Z from the last column of S
+        S.UpdateLocal( iLoc, numTimesteps-1, Z.GetLocal(iLoc,numTimesteps-2) );
+        // Add row-wise diff of Z to the middle
+        for( int j=1; j<numTimesteps-1; ++j )
+        {
+            const Complex<double> curr = Z.GetLocal(iLoc,j-1);
+            const Complex<double> next = Z.GetLocal(iLoc,j);
+            S.UpdateLocal( iLoc, j, next-curr ); 
+        }
+    }
+}
+
+} // namespace lps
+
 inline int
 LPS
 ( const DistMatrix<Complex<double>,STAR,VR>& D,
         DistMatrix<Complex<double>,VC,STAR>& L,
         DistMatrix<Complex<double>,VC,STAR>& S,
+  bool tv=true,
   double lambdaL=0.025, double lambdaSRelMaxM=0.5,
   double relTol=0.0025, int maxIts=100,
   bool tryTSQR=false )
@@ -53,6 +111,14 @@ LPS
     S.AlignWith( M );
     Zeros( S, N0*N1, numTimesteps );
 
+    // If using TV clipping, we need to accumulate data in the matrix Z 
+    DistMatrix<F,VC,STAR> Z( M.Grid() );
+    if( tv )
+    {
+        Z.AlignWith( M );
+        Zeros( Z, N0*N1, numTimesteps-1 );
+    }
+
     int numIts=0;
     DistMatrix<F,VC,STAR> M0( M.Grid() );
     DistMatrix<F,STAR,VR> R( M.Grid() );
@@ -70,15 +136,24 @@ LPS
             rank = elem::svt::TallCross( L, lambdaL, true );
 
         // S := TransformedST(M-L)
-        // TODO: Add ability to use TV instead of a temporal FFT
+        int numNonzeros;
         S = M;
         Axpy( F(-1), L, S );
-        TemporalFFT( S );
-        elem::SoftThreshold( S, lambdaS );
+        if( tv )
+        {
+            lps::UpdateZ( lambdaS/2, S, Z );
+            lps::SubtractAdjDz( Z, S );
+            numNonzeros = ZeroNorm( S );
+        }
+        else
+        {
+            TemporalFFT( S );
+            elem::SoftThreshold( S, lambdaS );
 #ifndef RELEASE
-        const int numNonzeros = ZeroNorm( S );
+            numNonzeros = ZeroNorm( S );
 #endif
-        TemporalAdjointFFT( S );
+            TemporalAdjointFFT( S );
+        }
 
         // M0 := M
         M0 = M;

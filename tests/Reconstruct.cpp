@@ -25,6 +25,7 @@ main( int argc, char* argv[] )
         const int n0 = Input("--n0","FFT size in x direction",16);
         const int n1 = Input("--n1","FFT size in y direction",16);
         const int m = Input("--m","cutoff parameter",2);
+        const bool tv = Input("--tv","TV clipping for sparsity",true);
         const double lambdaL = Input("--lambdaL","low-rank scale",0.025);
         const double lambdaSRel = Input("--lambdaSRel","sparse rel scale",0.5);
         const double relTol = Input("--relTol","relative L+S tolerance",0.0025);
@@ -75,7 +76,7 @@ main( int argc, char* argv[] )
         ( densityComp, sensitivity, paths, nc, N0, N1, n0, n1, m );
 
         DistMatrix<Complex<double>,VC,STAR> L, S;
-        LPS( data, L, S, lambdaL, lambdaSRel, relTol, maxIts, tryTSQR );
+        LPS( data, L, S, tv, lambdaL, lambdaSRel, relTol, maxIts, tryTSQR );
         if( print )
         {
             Print( L, "L" );
