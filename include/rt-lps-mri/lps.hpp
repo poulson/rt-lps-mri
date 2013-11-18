@@ -177,16 +177,24 @@ LPS
 #ifndef RELEASE
         const double frobL = FrobeniusNorm( L );
         const double frobS = FrobeniusNorm( S );
+        double frobZ;
+        if( tv )
+            frobZ = FrobeniusNorm( Z );
         if( D.Grid().Rank() == 0 )
+        {
             std::cout << "After " << numIts << " its: \n"
                       << "  rank(L)      = " << rank << "\n"
                       << "  nnz(TS)      = " << numNonzeros << "\n"
                       << "  || L    ||_F = " << frobL << "\n"
-                      << "  || S    ||_F = " << frobS << "\n"
-                      << "  || M0   ||_F = " << frobM0 << "\n"
+                      << "  || S    ||_F = " << frobS << "\n";
+            if( tv )
+                std::cout 
+                      << "  || Z    ||_F = " << frobZ << "\n";
+            std::cout << "  || M0   ||_F = " << frobM0 << "\n"
                       << "  || M-M0 ||_F = " << frobUpdate << "\n"
-                      << "  || M-M0 ||_F / || M ||_F = " << frobUpdate/frobM0
+                      << "  || M-M0 ||_F / || M0 ||_F = " << frobUpdate/frobM0
                       << std::endl;
+        }
 #endif
         if( numIts == maxIts || frobUpdate < relTol*frobM0 )
             break;
