@@ -31,7 +31,7 @@ UpdateZ
             const Complex<double> curr = B.GetLocal(iLoc,j);
             const Complex<double> next = B.GetLocal(iLoc,j+1);
             Z.UpdateLocal( iLoc, j, 0.25*(next-curr) ); 
-            // Clip magnitude to be less than or equal to lambdaS
+            // Clip magnitude to be less than or equal to clipRadius
             const Complex<double> xi = Z.GetLocal(iLoc,j);
             const double xiAbs = Abs(xi);
             if( xiAbs > clipRadius )
@@ -54,8 +54,6 @@ SubtractAdjDz
     {
         // Add the first column of Z to the first column of S
         S.UpdateLocal( iLoc, 0, Z.GetLocal(iLoc,0) );
-        // Subtract the last column of Z from the last column of S
-        S.UpdateLocal( iLoc, numTimesteps-1, Z.GetLocal(iLoc,numTimesteps-2) );
         // Add row-wise diff of Z to the middle
         for( int j=1; j<numTimesteps-1; ++j )
         {
@@ -63,6 +61,8 @@ SubtractAdjDz
             const Complex<double> next = Z.GetLocal(iLoc,j);
             S.UpdateLocal( iLoc, j, next-curr ); 
         }
+        // Subtract the last column of Z from the last column of S
+        S.UpdateLocal( iLoc, numTimesteps-1, -Z.GetLocal(iLoc,numTimesteps-2) );
     }
 }
 
