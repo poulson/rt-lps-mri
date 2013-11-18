@@ -31,6 +31,7 @@ main( int argc, char* argv[] )
         const double relTol = Input("--relTol","relative L+S tolerance",0.0025);
         const int maxIts = Input("--maxIts","max L+S iterations",100);
         const bool tryTSQR = Input("--tryTSQR","try Tall-Skinny QR?",false);
+        const bool progress = Input("--progress","print L+S progress",true);
         const string sensName = 
             Input("--sens","sens. filename",string("sensitivity.bin"));
         const string densName = 
@@ -76,7 +77,9 @@ main( int argc, char* argv[] )
         ( densityComp, sensitivity, paths, nc, N0, N1, n0, n1, m );
 
         DistMatrix<Complex<double>,VC,STAR> L, S;
-        LPS( data, L, S, tv, lambdaL, lambdaSRel, relTol, maxIts, tryTSQR );
+        LPS
+        ( data, L, S, tv, lambdaL, lambdaSRel, relTol, maxIts, 
+          tryTSQR, progress );
         if( print )
         {
             Print( L, "L" );

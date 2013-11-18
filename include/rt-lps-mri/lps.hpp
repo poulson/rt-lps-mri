@@ -76,7 +76,7 @@ LPS
   bool tv=true,
   double lambdaL=0.025, double lambdaSRelMaxM=0.5,
   double relTol=0.0025, int maxIts=100,
-  bool tryTSQR=false )
+  bool tryTSQR=false, bool progress=true )
 {
 #ifndef RELEASE
     CallStackEntry cse("LPS");
@@ -96,17 +96,14 @@ LPS
     const double maxM = MaxNorm( M );
     const double lambdaS = lambdaSRelMaxM*maxM;
 
-#ifndef RELEASE
-    DistMatrix<F,STAR,VR> R( M.Grid() );
-    Acquisition( M, R );
-    const double frobM = FrobeniusNorm( M );
-    const double frobR = FrobeniusNorm( R );
-    if( D.Grid().Rank() == 0 )
-        std::cout << "|| M= E'D ||_F = " << frobM << "\n"
-                  << "|| R=EE'D ||_F = " << frobR << "\n"
-                  << "lambdaL=" << lambdaL << ", lambdaS=" << lambdaS
-                  << std::endl;
-#endif
+    if( progress )
+    {
+        const double frobM = FrobeniusNorm( M );
+        if( D.Grid().Rank() == 0 )
+            std::cout << "|| M= E'D ||_F = " << frobM << "\n"
+                      << "lambdaL=" << lambdaL << ", lambdaS=" << lambdaS
+                      << std::endl;
+    }
 
     // Align L and S to M, and set S := 0
     L.SetGrid( M.Grid() );
@@ -125,6 +122,7 @@ LPS
 
     int numIts=0;
     DistMatrix<F,VC,STAR> M0( M.Grid() );
+    DistMatrix<F,STAR,VR> R( M.Grid() );
     while( true )
     {
         ++numIts;
@@ -155,9 +153,8 @@ LPS
         {
             TemporalFFT( S );
             elem::SoftThreshold( S, lambdaS );
-#ifndef RELEASE
-            numNonzeros = ZeroNorm( S );
-#endif
+            if( progress )
+                numNonzeros = ZeroNorm( S );
             TemporalAdjointFFT( S );
         }
 
@@ -174,28 +171,29 @@ LPS
         const Real frobM0 = FrobeniusNorm( M0 );        
         Axpy( F(-1), M, M0 );
         const Real frobUpdate = FrobeniusNorm( M0 );
-#ifndef RELEASE
-        const double frobL = FrobeniusNorm( L );
-        const double frobS = FrobeniusNorm( S );
-        double frobZ;
-        if( tv )
-            frobZ = FrobeniusNorm( Z );
-        if( D.Grid().Rank() == 0 )
+        if( progress )
         {
-            std::cout << "After " << numIts << " its: \n"
-                      << "  rank(L)      = " << rank << "\n"
-                      << "  nnz(TS)      = " << numNonzeros << "\n"
-                      << "  || L    ||_F = " << frobL << "\n"
-                      << "  || S    ||_F = " << frobS << "\n";
+            const double frobL = FrobeniusNorm( L );
+            const double frobS = FrobeniusNorm( S );
+            double frobZ;
             if( tv )
-                std::cout 
-                      << "  || Z    ||_F = " << frobZ << "\n";
-            std::cout << "  || M0   ||_F = " << frobM0 << "\n"
-                      << "  || M-M0 ||_F = " << frobUpdate << "\n"
-                      << "  || M-M0 ||_F / || M0 ||_F = " << frobUpdate/frobM0
-                      << std::endl;
+                frobZ = FrobeniusNorm( Z );
+            if( D.Grid().Rank() == 0 )
+            {
+                std::cout << "After " << numIts << " its: \n"
+                          << "  rank(L)      = " << rank << "\n"
+                          << "  nnz(TS)      = " << numNonzeros << "\n"
+                          << "  || L    ||_F = " << frobL << "\n"
+                          << "  || S    ||_F = " << frobS << "\n";
+                if( tv )
+                    std::cout 
+                          << "  || Z    ||_F = " << frobZ << "\n";
+                std::cout << "  || M0   ||_F = " << frobM0 << "\n"
+                          << "  || M-M0 ||_F = " << frobUpdate << "\n"
+                          << "  || M-M0 ||_F / || M0 ||_F = " 
+                          << frobUpdate/frobM0 << std::endl;
+            }
         }
-#endif
         if( numIts == maxIts || frobUpdate < relTol*frobM0 )
             break;
     }
