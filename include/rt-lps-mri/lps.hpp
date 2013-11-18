@@ -147,7 +147,8 @@ LPS
         {
             lps::UpdateZ( lambdaS/2, S, Z );
             lps::SubtractAdjDz( Z, S );
-            numNonzeros = ZeroNorm( S );
+            if( progress )
+                numNonzeros = ZeroNorm( S );
         }
         else
         {
