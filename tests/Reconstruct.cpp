@@ -14,6 +14,8 @@ int
 main( int argc, char* argv[] )
 {
     Initialize( argc, argv );
+    mpi::Comm comm = mpi::COMM_WORLD;
+    const int commRank = mpi::CommRank( comm );
 
     try
     {
@@ -45,6 +47,14 @@ main( int argc, char* argv[] )
         ProcessInput();
         PrintInputReport();
 
+        mpi::Barrier( comm );
+        const double loadStart = mpi::Time();
+        if( commRank == 0 )
+        {
+            std::cout << "Loading files...";
+            std::cout.flush();
+        }
+
         DistMatrix<double,STAR,STAR> densityComp;
         LoadDensity( nnu, nt, densName, densityComp );
 
@@ -56,6 +66,11 @@ main( int argc, char* argv[] )
 
         DistMatrix<Complex<double>,STAR,VR> data;
         LoadData( nnu, nc, nt, dataName, data );
+
+        mpi::Barrier( comm );
+        if( commRank == 0 )
+            std::cout << "DONE. " << mpi::Time()-loadStart << " seconds" 
+                      << std::endl;
 
         if( print )
         {
@@ -73,13 +88,35 @@ main( int argc, char* argv[] )
         }
 
         // Initialize acquisition operator and its adjoint
+        mpi::Barrier( comm );
+        const double startInit = mpi::Time();
+        if( commRank == 0 )
+        {
+            std::cout << "Initializing acquisition operator...";
+            std::cout.flush();
+        }
         InitializeAcquisition
         ( densityComp, sensitivity, paths, nc, N0, N1, n0, n1, m );
+        mpi::Barrier( comm );
+        if( commRank == 0 )
+            std::cout << "DONE. " << mpi::Time()-startInit << " seconds"
+                      << std::endl;
 
+        mpi::Barrier( comm );
+        const double startLPS = mpi::Time();
+        if( commRank == 0 )
+        {
+            std::cout << "Starting L+S decomposition...";
+            std::cout.flush();
+        }
         DistMatrix<Complex<double>,VC,STAR> L, S;
         LPS
         ( data, L, S, tv, lambdaL, lambdaSRel, relTol, maxIts, 
           tryTSQR, progress );
+        mpi::Barrier( comm );
+        if( commRank == 0 )
+            std::cout << "DONE. " << mpi::Time()-startLPS << " seconds"
+                      << std::endl;
         if( print )
         {
             Print( L, "L" );

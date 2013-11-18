@@ -198,9 +198,6 @@ LPS
         if( numIts == maxIts || frobUpdate < relTol*frobM0 )
             break;
     }
-    if( numIts == maxIts )
-        RuntimeError("L+S decomposition did not converge in time");
-
     return numIts;
 }
 
