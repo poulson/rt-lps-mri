@@ -26,16 +26,15 @@ endif()
 
 # Test whether or not MATH_LIBS contains NFFT3 (and FFTW3?)
 include(CheckFunctionExists)
-set(CMAKE_REQUIRED_LIBRARIES ${MATH_LIBS})
+set(CMAKE_REQUIRED_LIBRARIES "${NFFT_LIBS};${MATH_LIBS}")
 check_function_exists(fftw_execute HAVE_FFTW_EXECUTE)
 check_function_exists(nfft_trafo HAVE_NFFT_TRAFO)
 if(NOT HAVE_FFTW_EXECUTE)
-  message(FATAL_ERROR "MATH_LIBS did not contain FFTW3")
+  message(FATAL_ERROR "NFFT_LIBS and MATH_LIBS did not contain FFTW3")
 endif()
 if(NOT HAVE_NFFT_TRAFO)
-  message(FATAL_ERROR "MATH_LIBS did not contain NFFT3")
+  message(FATAL_ERROR "NFFT_LIBS and MATH_LIBS did not contain NFFT3")
 endif()
-
 
 # Check if the include directories work for FFTW
 set(FFTW_CODE
@@ -49,10 +48,11 @@ set(FFTW_CODE
        return 0;
      }")
 set(CMAKE_REQUIRED_INCLUDES ${FFTW_INC_DIR})
-set(CMAKE_REQUIRED_LIBRARIES ${MATH_LIBS})
+set(CMAKE_REQUIRED_LIBRARIES "${NFFT_LIBS};${MATH_LIBS}")
 check_cxx_source_compiles("${FFTW_CODE}" HAVE_FFTW_COMPILE)
 if(NOT HAVE_FFTW_COMPILE)
-  message(FATAL_ERROR "Could not compile FFTW3 program using FFTW_INC_DIR=${FFTW_INC_DIR} and MATH_LIBS=${MATH_LIBS}")
+  message(FATAL_ERROR "Could not compile FFTW3 program using
+FFTW_INC_DIR=${FFTW_INC_DIR}, NFFT_LIBS=${NFFT_LIBS}, and MATH_LIBS=${MATH_LIBS}")
 endif()
 include_directories(${FFTW_INC_DIR})
 
@@ -69,11 +69,12 @@ set(NFFT_CODE
        nfft_finalize(&p);
        return 0;
      }")
-set(CMAKE_REQUIRED_INCLUDES ${NFFT_INC_DIR})
-set(CMAKE_REQUIRED_LIBRARIES ${MATH_LIBS})
+set(CMAKE_REQUIRED_INCLUDES "${NFFT_INC_DIR};${FFTW_INC_DIR}")
+set(CMAKE_REQUIRED_LIBRARIES "${NFFT_LIBS};${MATH_LIBS}")
 check_cxx_source_compiles("${NFFT_CODE}" HAVE_NFFT_COMPILE)
 if(NOT HAVE_NFFT_COMPILE)
-  message(FATAL_ERROR "Could not compile NFFT program using NFFT_INC_DIR=${NFFT_INC_DIR} and MATH_LIBS=${MATH_LIBS}")
+  message(FATAL_ERROR "Could not compile NFFT program using
+NFFT_INC_DIR=${NFFT_INC_DIR}, NFFT_LIBS=${NFFT_LIBS} and MATH_LIBS=${MATH_LIBS}")
 endif()
 include_directories(${NFFT_INC_DIR})
 
@@ -94,7 +95,7 @@ set(RTLPSMRI_SRC "${RTLPSMRI_CPP};${RTLPSMRI_HEADERS}")
 
 # The main library
 add_library(rtlpsmri ${LIBRARY_TYPE} ${RTLPSMRI_SRC})
-target_link_libraries(rtlpsmri elemental)
+target_link_libraries(rtlpsmri ${NFFT_LIBS} elemental)
 install(TARGETS rtlpsmri DESTINATION lib)
 
 # Define the header-file preparation rules

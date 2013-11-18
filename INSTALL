@@ -1,5 +1,8 @@
-The library is currently being configured with:
-    cmake -D CMAKE_BUILD_TYPE=PureDebug -D MATH_LIBS="/home/poulson/Install/lib/libopenblas.a;/home/poulson/Install/lib/libnfft3.a;-lfftw3;-lgfortran;-lm;-lpthread" -D CXX_FLAGS="-Wall -std=c++11" -D NFFT_INC_DIR=/home/poulson/Install/include ..
+The library is currently being configured on my laptop with:
+    cmake -D CMAKE_BUILD_TYPE=PureDebug -D NFFT_LIBS="/home/poulson/Install/lib/libnfft3.a;-lfftw3" -D MATH_LIBS="/home/poulson/Install/lib/libopenblas.a;-lgfortran;-lm;-lpthread" -D CXX_FLAGS="-Wall -std=c++11" -D NFFT_INC_DIR=/home/poulson/Install/include ..
+
+and on Stamped with:
+    ~/cmake-2.8.11/bin/cmake -D CMAKE_BUILD_TYPE=PureRelease -D CMAKE_TOOLCHAIN_FILE=../external/elemental/cmake/toolchains/Stampede-intel-mvapich2-mkl.cmake -D NFFT_LIBS="$HOME/Install/lib/libnfft3.a;-L$TACC_FFTW3_LIB;-lfftw3" -D NFFT_INC_DIR=$HOME/Install/include -D FFTW_INC_DIR=$TACC_FFTW3_INC ..
 
 Much more detailed instructions will follow once more functionality is 
 available.
