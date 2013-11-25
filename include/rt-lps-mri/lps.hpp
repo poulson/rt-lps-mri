@@ -81,12 +81,18 @@ LPS
 #ifndef RELEASE
     CallStackEntry cse("LPS");
 #endif
+    using elem::Timer;
     typedef double Real;
     typedef Complex<Real> F;
 
     const int numTimesteps = NumTimesteps();
     const int N0 = FirstBandwidth();
     const int N1 = SecondBandwidth();
+
+    const bool amRoot = D.Grid().Rank() == 0;
+
+    Timer initial("initial");
+    initial.Start();
 
     // M := E' D
     DistMatrix<F,VC,STAR> M( D.Grid() );
@@ -99,7 +105,7 @@ LPS
     if( progress )
     {
         const double frobM = FrobeniusNorm( M );
-        if( D.Grid().Rank() == 0 )
+        if( amRoot )
             std::cout << "|| M= E'D ||_F = " << frobM << "\n"
                       << "lambdaL=" << lambdaL << ", lambdaS=" << lambdaS
                       << std::endl;
@@ -120,7 +126,12 @@ LPS
         Zeros( Z, N0*N1, numTimesteps-1 );
     }
 
+
+    if( progress && amRoot )
+        std::cout << "initialization time: " << initial.Stop() << std::endl;
+
     int numIts=0;
+    Timer svt("svt"), thresh("thresh"), forward("forward"), adjoint("adjoint");
     DistMatrix<F,VC,STAR> M0( M.Grid() );
     DistMatrix<F,STAR,VR> R( M.Grid() );
     while( true )
@@ -131,6 +142,7 @@ LPS
         M0 = M;
 
         // L := SVT(M-S,lambdaL)
+        svt.Start();
         L = M;
         Axpy( F(-1), S, L );
         int rank;
@@ -138,8 +150,10 @@ LPS
             rank = elem::svt::TSQR( L, lambdaL, true );
         else 
             rank = elem::svt::TallCross( L, lambdaL, true );
+        const double svtTime = svt.Stop();
 
         // S := TransformedST(M-L)
+        thresh.Start();
         int numNonzeros;
         S = M;
         Axpy( F(-1), L, S );
@@ -158,16 +172,21 @@ LPS
                 numNonzeros = ZeroNorm( S );
             TemporalAdjointFFT( S );
         }
+        const double threshTime = thresh.Stop();
 
         // M := L + S - E'(E(L+S)-D)
+        forward.Start();
         M = L;
         Axpy( F(1), S, M );
         Acquisition( M, R );        
         Axpy( F(-1), D, R );
+        const double forwardTime = forward.Stop();
+        adjoint.Start();
         AdjointAcquisition( R, M );
         Scale( F(-1), M );
         Axpy( F(1), L, M );
         Axpy( F(1), S, M );
+        const double adjointTime = adjoint.Stop();
 
         const Real frobM0 = FrobeniusNorm( M0 );        
         Axpy( F(-1), M, M0 );
@@ -179,7 +198,7 @@ LPS
             double frobZ;
             if( tv )
                 frobZ = FrobeniusNorm( Z );
-            if( D.Grid().Rank() == 0 )
+            if( amRoot )
             {
                 std::cout << "After " << numIts << " its: \n"
                           << "  rank(L)      = " << rank << "\n"
@@ -192,7 +211,12 @@ LPS
                 std::cout << "  || M0   ||_F = " << frobM0 << "\n"
                           << "  || M-M0 ||_F = " << frobUpdate << "\n"
                           << "  || M-M0 ||_F / || M0 ||_F = " 
-                          << frobUpdate/frobM0 << std::endl;
+                          << frobUpdate/frobM0 << "\n"
+                          << "  SVT time:     " << svtTime << " seconds\n"
+                          << "  Thresh time:  " << threshTime << " seconds\n"
+                          << "  Forward time: " << forwardTime << " seconds\n"
+                          << "  Adjoint time: " << adjointTime << " seconds\n"
+                          << std::endl;
             }
         }
         if( numIts == maxIts || frobUpdate < relTol*frobM0 )
