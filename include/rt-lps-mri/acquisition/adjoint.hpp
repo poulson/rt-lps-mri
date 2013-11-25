@@ -68,7 +68,8 @@ ContractionPrescaling( DistMatrix<Complex<double>,STAR,VR>& FHat )
 inline void
 CoilContraction
 ( const DistMatrix<Complex<double>,STAR,VR>& FHat,
-        DistMatrix<Complex<double>,VC,STAR>& images )
+        DistMatrix<Complex<double>,VC,STAR>& images,
+  bool progress=false )
 {
 #ifndef RELEASE
     CallStackEntry cse("acquisition::CoilContraction");
@@ -80,6 +81,7 @@ CoilContraction
     const int rowShift = FHat.RowShift();
     const int rowStride = FHat.RowStride();
 
+    elem::Timer timer("");
     DistMatrix<Complex<double>,STAR,VR> images_STAR_VR( FHat.Grid() );
     images_STAR_VR.AlignWith( FHat );
     Zeros( images_STAR_VR, height, numTimesteps );
@@ -135,6 +137,11 @@ CoilContraction
     }
 
     // Perform the non-uniform AllToAll communication
+    if( progress )
+    {
+        mpi::Barrier( FHat.RowComm() );
+        timer.Start();
+    }
     std::vector<Complex<double>> recvBuf( totalRecv );
     mpi::AllToAll
     ( sendBuf.data(), sendSizes.data(), sendOffsets.data(),
@@ -143,6 +150,32 @@ CoilContraction
     std::vector<Complex<double>>().swap( sendBuf );
     std::vector<int>().swap( sendSizes );
     std::vector<int>().swap( sendOffsets );
+    if( progress )
+    {
+        const double allToAllTime = timer.Stop();
+        mpi::Barrier( FHat.RowComm() );
+        const int minTotalSend =
+            mpi::AllReduce( totalSend, mpi::MIN, FHat.RowComm() );
+        const int minTotalRecv =
+            mpi::AllReduce( totalRecv, mpi::MIN, FHat.RowComm() );
+        const int maxTotalSend =
+            mpi::AllReduce( totalSend, mpi::MAX, FHat.RowComm() );
+        const int maxTotalRecv =
+            mpi::AllReduce( totalRecv, mpi::MAX, FHat.RowComm() );
+        const int globalTotalSend =
+            mpi::AllReduce( totalSend, mpi::SUM, FHat.RowComm() );
+        const int globalTotalRecv =
+            mpi::AllReduce( totalRecv, mpi::SUM, FHat.RowComm() );
+        if( FHat.Grid().Rank() == 0 )
+            std::cout << "      Reduce comm: " << allToAllTime << " seconds\n"
+                      << "        min send: " << minTotalSend << "\n"
+                      << "        min recv: " << minTotalRecv << "\n"
+                      << "        max send: " << maxTotalSend << "\n"
+                      << "        max recv: " << maxTotalRecv << "\n"
+                      << "        tot send: " << globalTotalSend << "\n"
+                      << "        tot recv: " << globalTotalRecv << "\n"
+                      << std::endl;
+    }
 
     // Unpack the recv buffer
     offsets = recvOffsets;
@@ -166,23 +199,40 @@ CoilContraction
 inline void
 AdjointAcquisition
 ( const DistMatrix<Complex<double>,STAR,VR>& F, 
-        DistMatrix<Complex<double>,VC,STAR>& images )
+        DistMatrix<Complex<double>,VC,STAR>& images, 
+  bool progress=false )
 {
 #ifndef RELEASE
     CallStackEntry cse("AdjointAcquisition");
 #endif
     // Pre-scale the k-space data by the coil sensitivities
+    elem::Timer timer("");
+    timer.Start();
     DistMatrix<Complex<double>,STAR,VR> scaledF( F.Grid() );
     acquisition::ScaleByDensities( F, scaledF );
+    const double scaleTime = timer.Stop();
 
     // Transform each k-space vector into the image domain
+    timer.Start();
     DistMatrix<Complex<double>,STAR,VR> FHat( F.Grid() );
     CoilAwareAdjointNFFT2D( scaledF, FHat );
+    const double adjNfftTime = timer.Stop();
 
     // Perform a contraction over the coils with a weighting related to 
     // their sensitivities
+    timer.Start();
     acquisition::ContractionPrescaling( FHat );
-    acquisition::CoilContraction( FHat, images );
+    const double prescaleTime = timer.Stop();
+    timer.Start();
+    acquisition::CoilContraction( FHat, images, progress );
+    const double contractTime = timer.Stop();
+
+    if( progress && F.Grid().Rank() == 0 ) 
+        std::cout << "    scale:    " << scaleTime << " seconds\n"
+                  << "    adjNFFT:  " << adjNfftTime << " seconds\n"
+                  << "    prescale: " << prescaleTime << " seconds\n"
+                  << "    contract: " << contractTime << " seconds\n"
+                  << std::endl;
 }
 
 } // namespace mri

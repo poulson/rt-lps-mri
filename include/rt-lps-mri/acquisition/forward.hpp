@@ -29,11 +29,13 @@ namespace acquisition {
 inline void
 Scatter
 ( const DistMatrix<Complex<double>,VC,STAR>& images,
-        DistMatrix<Complex<double>,STAR,VR>& scatteredImages )
+        DistMatrix<Complex<double>,STAR,VR>& scatteredImages,
+  bool progress=false )
 {
 #ifndef RELEASE
     CallStackEntry cse("acquisition::Scatter");
 #endif
+    elem::Timer timer("");
     DistMatrix<Complex<double>,STAR,VR> images_STAR_VR( images );
 
     const int height = images.Height();
@@ -100,6 +102,11 @@ Scatter
     }
 
     // Perform the non-uniform AllToAll communication
+    if( progress )
+    {
+        mpi::Barrier( images_STAR_VR.RowComm() );
+        timer.Start();
+    }
     std::vector<Complex<double>> recvBuf( totalRecv );
     mpi::AllToAll
     ( sendBuf.data(), sendSizes.data(), sendOffsets.data(), 
@@ -108,6 +115,32 @@ Scatter
     std::vector<Complex<double>>().swap( sendBuf );
     std::vector<int>().swap( sendSizes );
     std::vector<int>().swap( sendOffsets );
+    if( progress )
+    {
+        const double allToAllTime = timer.Stop();
+        mpi::Barrier( images_STAR_VR.RowComm() );
+        const int minTotalSend = 
+            mpi::AllReduce( totalSend, mpi::MIN, images_STAR_VR.RowComm() );
+        const int minTotalRecv = 
+            mpi::AllReduce( totalRecv, mpi::MIN, images_STAR_VR.RowComm() );
+        const int maxTotalSend = 
+            mpi::AllReduce( totalSend, mpi::MAX, images_STAR_VR.RowComm() );
+        const int maxTotalRecv = 
+            mpi::AllReduce( totalRecv, mpi::MAX, images_STAR_VR.RowComm() );
+        const int globalTotalSend = 
+            mpi::AllReduce( totalSend, mpi::SUM, images_STAR_VR.RowComm() );
+        const int globalTotalRecv = 
+            mpi::AllReduce( totalRecv, mpi::SUM, images_STAR_VR.RowComm() );
+        if( images_STAR_VR.Grid().Rank() == 0 )    
+            std::cout << "      Scatter comm: " << allToAllTime << " seconds\n"
+                      << "        min send: " << minTotalSend << "\n"
+                      << "        min recv: " << minTotalRecv << "\n"
+                      << "        max send: " << maxTotalSend << "\n"
+                      << "        max recv: " << maxTotalRecv << "\n"
+                      << "        tot send: " << globalTotalSend << "\n"
+                      << "        tot recv: " << globalTotalRecv << "\n"
+                      << std::endl;
+    }
 
     // Unpack the recv buffer
     offsets = recvOffsets;
@@ -150,20 +183,34 @@ ScaleBySensitivities( DistMatrix<Complex<double>,STAR,VR>& scatteredImages )
 inline void
 Acquisition
 ( const DistMatrix<Complex<double>,VC,STAR>& images,
-        DistMatrix<Complex<double>,STAR,VR>& F )
+        DistMatrix<Complex<double>,STAR,VR>& F,
+  bool progress=false )
 {
 #ifndef RELEASE
     CallStackEntry cse("Acquisition");
 #endif
     // Redundantly scatter image x time -> image x (coil,time)
+    elem::Timer timer("");
+    timer.Start();
     DistMatrix<Complex<double>,STAR,VR> scatteredImages( images.Grid() );
-    acquisition::Scatter( images, scatteredImages );
+    acquisition::Scatter( images, scatteredImages, progress );
+    const double scatterTime = timer.Stop();
 
     // Scale by the coil sensitivities
+    timer.Start();
     acquisition::ScaleBySensitivities( scatteredImages ); 
+    const double scaleTime = timer.Stop();
 
     // Finish the transformation
+    timer.Start();
     CoilAwareNFFT2D( scatteredImages, F );
+    const double nfftTime = timer.Stop();
+
+    if( progress && F.Grid().Rank() == 0 )
+        std::cout << "    scatter: " << scatterTime << " seconds\n"
+                  << "    scale:   " << scaleTime << " seconds\n"
+                  << "    NFFT:    " << nfftTime << " seconds\n"
+                  << std::endl;
 }
 
 } // namespace mri

@@ -96,7 +96,7 @@ LPS
 
     // M := E' D
     DistMatrix<F,VC,STAR> M( D.Grid() );
-    AdjointAcquisition( D, M );
+    AdjointAcquisition( D, M, progress );
 
     // Set lambdaS relative to || M ||_max
     const double maxM = MaxNorm( M );
@@ -178,11 +178,11 @@ LPS
         forward.Start();
         M = L;
         Axpy( F(1), S, M );
-        Acquisition( M, R );        
+        Acquisition( M, R, progress ); 
         Axpy( F(-1), D, R );
         const double forwardTime = forward.Stop();
         adjoint.Start();
-        AdjointAcquisition( R, M );
+        AdjointAcquisition( R, M, progress );
         Scale( F(-1), M );
         Axpy( F(1), L, M );
         Axpy( F(1), S, M );
