@@ -74,124 +74,36 @@ CoilContraction
 #ifndef RELEASE
     CallStackEntry cse("acquisition::CoilContraction");
 #endif
+    typedef Complex<double> F;
     const int height = FHat.Height();
     const int numCoils = NumCoils();
     const int numTimesteps = NumTimesteps();
-    const int rowAlign = FHat.RowAlign();
-    const int rowShift = FHat.RowShift();
-    const int rowStride = FHat.RowStride();
 
     elem::Timer timer("");
-    DistMatrix<Complex<double>,STAR,VR> images_STAR_VR( FHat.Grid() );
-    images_STAR_VR.AlignWith( FHat );
-    Zeros( images_STAR_VR, height, numTimesteps );
+    timer.Start();
+    DistMatrix<Complex<double>,VC,STAR> FHat_VC_STAR( images.Grid() );
+    FHat_VC_STAR.AlignWith( images ); 
+    FHat_VC_STAR = FHat;
+    const double redistTime = timer.Stop();
 
-    const int localWidth = FHat.LocalWidth();
-    const int localNewWidth = images_STAR_VR.LocalWidth();
-
-    // Determine the number of entries we send to each process
-    std::vector<int> sendSizes( rowStride, 0 );
-    for( int jLoc=0; jLoc<localWidth; ++jLoc )
+    timer.Start();
+    Zeros( images, height, numTimesteps );
+    const int localHeight = images.LocalHeight();
+    for( int t=0; t<numTimesteps; ++t )
     {
-        const int j = rowShift + jLoc*rowStride;
-        const int t = j / numCoils;
-        const int newOwner = (t+rowAlign) % rowStride;
-        sendSizes[newOwner] += height;
-    }
-
-    // Determine the number of entries we recv from each process
-    std::vector<int> recvSizes( rowStride, 0 );
-    for( int jLoc=0; jLoc<localNewWidth; ++jLoc )
-    {
-        const int t = rowShift + jLoc*rowStride;
-        for( int j=t*numCoils; j<(t+1)*numCoils; ++j )
+        for( int coil=0; coil<numCoils; ++coil )
         {
-            const int owner = (j+rowAlign) % rowStride;
-            recvSizes[owner] += height;
+            const int jOld = coil + t*numCoils;
+            blas::Axpy
+            ( localHeight, F(1), 
+              FHat_VC_STAR.LockedBuffer(0,jOld), 1, images.Buffer(0,t), 1 );
         }
     }
-
-    // Form the send and recv offset vectors
-    int totalSend=0, totalRecv=0;
-    std::vector<int> sendOffsets( rowStride ), recvOffsets( rowStride );
-    for( int q=0; q<rowStride; ++q )
-    {
-        sendOffsets[q] = totalSend;
-        recvOffsets[q] = totalRecv;
-        totalSend += sendSizes[q];
-        totalRecv += recvSizes[q];
-    }
-
-    // Pack the send buffer
-    std::vector<int> offsets = sendOffsets;
-    std::vector<Complex<double>> sendBuf( totalSend );
-    for( int jLoc=0; jLoc<localWidth; ++jLoc )
-    {
-        const int j = rowShift + jLoc*rowStride;
-        const int t = j / numCoils;
-        const int newOwner = (t+rowAlign) % rowStride;
-        elem::MemCopy
-        ( &sendBuf[offsets[newOwner]], 
-          FHat.LockedBuffer(0,jLoc), height );
-        offsets[newOwner] += height;
-    }
-
-    // Perform the non-uniform AllToAll communication
-    if( progress )
-    {
-        mpi::Barrier( FHat.RowComm() );
-        timer.Start();
-    }
-    std::vector<Complex<double>> recvBuf( totalRecv );
-    mpi::AllToAll
-    ( sendBuf.data(), sendSizes.data(), sendOffsets.data(),
-      recvBuf.data(), recvSizes.data(), recvOffsets.data(),
-      FHat.RowComm() );
-    std::vector<Complex<double>>().swap( sendBuf );
-    std::vector<int>().swap( sendSizes );
-    std::vector<int>().swap( sendOffsets );
-    if( progress )
-    {
-        const double allToAllTime = timer.Stop();
-        mpi::Barrier( FHat.RowComm() );
-        const int minTotalSend =
-            mpi::AllReduce( totalSend, mpi::MIN, FHat.RowComm() );
-        const int minTotalRecv =
-            mpi::AllReduce( totalRecv, mpi::MIN, FHat.RowComm() );
-        const int maxTotalSend =
-            mpi::AllReduce( totalSend, mpi::MAX, FHat.RowComm() );
-        const int maxTotalRecv =
-            mpi::AllReduce( totalRecv, mpi::MAX, FHat.RowComm() );
-        const int globalTotalSend =
-            mpi::AllReduce( totalSend, mpi::SUM, FHat.RowComm() );
-        const int globalTotalRecv =
-            mpi::AllReduce( totalRecv, mpi::SUM, FHat.RowComm() );
-        if( FHat.Grid().Rank() == 0 )
-            std::cout << "      Reduce comm: " << allToAllTime << " seconds\n"
-                      << "        min send: " << minTotalSend << "\n"
-                      << "        min recv: " << minTotalRecv << "\n"
-                      << "        max send: " << maxTotalSend << "\n"
-                      << "        max recv: " << maxTotalRecv << "\n"
-                      << "        tot send: " << globalTotalSend << "\n"
-                      << "        tot recv: " << globalTotalRecv << "\n"
-                      << std::endl;
-    }
-
-    // Unpack the recv buffer
-    offsets = recvOffsets;
-    for( int jLoc=0; jLoc<localNewWidth; ++jLoc )
-    {
-        const int t = rowShift + jLoc*rowStride;
-        auto imageCol = images_STAR_VR.Buffer(0,jLoc);
-        for( int j=t*numCoils; j<(t+1)*numCoils; ++j )
-        {
-            const int owner = (j+rowAlign) % rowStride;
-            for( int i=0; i<height; ++i )
-                imageCol[i] += recvBuf[offsets[owner]++];
-        }
-    }
-
-    images = images_STAR_VR;
+    const double axpyTime = timer.Stop();
+    if( progress && FHat.Grid().Rank() == 0 )
+        std::cout << "      Contract redist: " << redistTime << " seconds\n"
+                  << "      Contract axpies: " << axpyTime << " seconds"
+                  << std::endl;
 }
 
 } // namespace acquisition

@@ -35,125 +35,37 @@ Scatter
 #ifndef RELEASE
     CallStackEntry cse("acquisition::Scatter");
 #endif
-    elem::Timer timer("");
-    DistMatrix<Complex<double>,STAR,VR> images_STAR_VR( images );
-
     const int height = images.Height();
+    const int localHeight = images.LocalHeight();
     const int numCoils = NumCoils();
     const int numTimesteps = NumTimesteps();
-    const int rowAlign = images_STAR_VR.RowAlign();
-    const int rowShift = images_STAR_VR.RowShift();
-    const int rowStride = images_STAR_VR.RowStride();
 
-    scatteredImages.SetGrid( images_STAR_VR.Grid() );
-    scatteredImages.AlignWith( images_STAR_VR );
-    Zeros( scatteredImages, height, numCoils*numTimesteps );
-
-    const int localOrigWidth = images_STAR_VR.LocalWidth();
-    const int localWidth = scatteredImages.LocalWidth();
-
-    // Determine the number of entries we send to each process
-    std::vector<int> sendSizes( rowStride, 0 );
-    for( int jLoc=0; jLoc<localOrigWidth; ++jLoc )
+    elem::Timer timer("");
+    timer.Start();
+    DistMatrix<Complex<double>,VC,STAR> 
+        scatteredImages_VC_STAR( images.Grid() );
+    scatteredImages_VC_STAR.AlignWith( images );
+    Zeros( scatteredImages_VC_STAR, height, numCoils*numTimesteps );
+    for( int t=0; t<numTimesteps; ++t )
     {
-        const int t = rowShift + jLoc*rowStride;
-        for( int j=t*numCoils; j<(t+1)*numCoils; ++j )
+        for( int coil=0; coil<numCoils; ++coil )
         {
-            const int owner = (j+rowAlign) % rowStride;
-            sendSizes[owner] += height;
-        }
-    }
-
-    // Determine the number of entries we receive from each process
-    std::vector<int> recvSizes( rowStride, 0 );
-    for( int jLoc=0; jLoc<localWidth; ++jLoc )
-    {
-        const int j = rowShift + jLoc*rowStride;
-        const int t = j / numCoils;
-        const int origOwner = (t+rowAlign) % rowStride;
-        recvSizes[origOwner] += height;
-    }
-
-    // Form the send and recv offset vectors
-    int totalSend=0, totalRecv=0;
-    std::vector<int> sendOffsets( rowStride ), recvOffsets( rowStride );
-    for( int q=0; q<rowStride; ++q )
-    {
-        sendOffsets[q] = totalSend;
-        recvOffsets[q] = totalRecv;
-        totalSend += sendSizes[q];
-        totalRecv += recvSizes[q];
-    }
-
-    // Pack the send buffer
-    std::vector<Complex<double>> sendBuf( totalSend );
-    std::vector<int> offsets = sendOffsets;
-    for( int jLoc=0; jLoc<localOrigWidth; ++jLoc )
-    {
-        const int t = rowShift + jLoc*rowStride;
-        for( int j=t*numCoils; j<(t+1)*numCoils; ++j )
-        {
-            const int owner = (j+rowAlign) % rowStride;
+            const int jNew = coil + t*numCoils;
             elem::MemCopy
-            ( &sendBuf[offsets[owner]], 
-              images_STAR_VR.LockedBuffer(0,jLoc), height );
-            offsets[owner] += height;
+            ( scatteredImages_VC_STAR.Buffer(0,jNew),
+              images.LockedBuffer(0,t), localHeight ); 
         }
     }
+    const double memCopyTime = timer.Stop();
 
-    // Perform the non-uniform AllToAll communication
-    if( progress )
-    {
-        mpi::Barrier( images_STAR_VR.RowComm() );
-        timer.Start();
-    }
-    std::vector<Complex<double>> recvBuf( totalRecv );
-    mpi::AllToAll
-    ( sendBuf.data(), sendSizes.data(), sendOffsets.data(), 
-      recvBuf.data(), recvSizes.data(), recvOffsets.data(), 
-      images_STAR_VR.RowComm() );
-    std::vector<Complex<double>>().swap( sendBuf );
-    std::vector<int>().swap( sendSizes );
-    std::vector<int>().swap( sendOffsets );
-    if( progress )
-    {
-        const double allToAllTime = timer.Stop();
-        mpi::Barrier( images_STAR_VR.RowComm() );
-        const int minTotalSend = 
-            mpi::AllReduce( totalSend, mpi::MIN, images_STAR_VR.RowComm() );
-        const int minTotalRecv = 
-            mpi::AllReduce( totalRecv, mpi::MIN, images_STAR_VR.RowComm() );
-        const int maxTotalSend = 
-            mpi::AllReduce( totalSend, mpi::MAX, images_STAR_VR.RowComm() );
-        const int maxTotalRecv = 
-            mpi::AllReduce( totalRecv, mpi::MAX, images_STAR_VR.RowComm() );
-        const int globalTotalSend = 
-            mpi::AllReduce( totalSend, mpi::SUM, images_STAR_VR.RowComm() );
-        const int globalTotalRecv = 
-            mpi::AllReduce( totalRecv, mpi::SUM, images_STAR_VR.RowComm() );
-        if( images_STAR_VR.Grid().Rank() == 0 )    
-            std::cout << "      Scatter comm: " << allToAllTime << " seconds\n"
-                      << "        min send: " << minTotalSend << "\n"
-                      << "        min recv: " << minTotalRecv << "\n"
-                      << "        max send: " << maxTotalSend << "\n"
-                      << "        max recv: " << maxTotalRecv << "\n"
-                      << "        tot send: " << globalTotalSend << "\n"
-                      << "        tot recv: " << globalTotalRecv << "\n"
-                      << std::endl;
-    }
+    timer.Start();
+    scatteredImages = scatteredImages_VC_STAR;
+    const double redistTime = timer.Stop();
 
-    // Unpack the recv buffer
-    offsets = recvOffsets;
-    for( int jLoc=0; jLoc<localWidth; ++jLoc )
-    {
-        const int j = rowShift + jLoc*rowStride;
-        const int t = j / numCoils;
-        const int origOwner = (t+rowAlign) % rowStride;
-        elem::MemCopy
-        ( scatteredImages.Buffer(0,jLoc),
-          &recvBuf[offsets[origOwner]], height );
-        offsets[origOwner] += height;
-    }
+    if( progress && images.Grid().Rank() == 0 )
+        std::cout << "    Scatter copies: " << memCopyTime << " seconds\n"
+                  << "    Scatter redist: " << redistTime << " seconds"
+                  << std::endl;
 }
 
 inline void
