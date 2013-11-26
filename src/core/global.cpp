@@ -22,6 +22,8 @@ int numTimesteps;
 int numNonUniformPoints;
 int firstBandwidth;
 int secondBandwidth;
+fftw_plan fftwForward, fftwBackward;
+fftw_complex *g1, *g2;
 elem::DistMatrix<double,elem::STAR,elem::STAR>* coilPaths;
 std::vector<nfft_plan> coilPlans;
 
@@ -185,10 +187,17 @@ void InitializeCoilPlans
 
     int NN[dim] = { N0, N1 };
     int nn[dim] = { n0, n1 };
+    const int nTotal = n0*n1;
 
-    // TODO: Sort paths for better cache reusage?
-    unsigned nfftFlags = PRE_PHI_HUT| PRE_FULL_PSI| FFTW_INIT| FFT_OUT_OF_PLACE;
+    unsigned nfftFlags = PRE_PHI_HUT| PRE_FULL_PSI| NFFT_SORT_NODES;
     unsigned fftwFlags = FFTW_MEASURE| FFTW_DESTROY_INPUT;
+
+    ::g1 = (fftw_complex*)nfft_malloc( nTotal*sizeof(fftw_complex) );
+    ::g2 = (fftw_complex*)nfft_malloc( nTotal*sizeof(fftw_complex) );
+    ::fftwForward = 
+        fftw_plan_dft_2d( n0, n1, ::g1, ::g2, FFTW_FORWARD, fftwFlags );
+    ::fftwBackward = 
+        fftw_plan_dft_2d( n0, n1, ::g2, ::g1, FFTW_BACKWARD, fftwFlags );
 
     ::coilPlans.clear();
     ::coilPlans.resize( numTimesteps );
@@ -196,6 +205,10 @@ void InitializeCoilPlans
     {
         nfft_plan& plan = ::coilPlans[t];
         plan.x = ::coilPaths->Buffer(0,t);
+        plan.g1 = ::g1;
+        plan.g2 = ::g2;
+        plan.my_fftw_plan1 = ::fftwForward;
+        plan.my_fftw_plan2 = ::fftwBackward;
         nfft_init_guru
         ( &plan, dim, NN, numNonUniform, nn, m, nfftFlags, fftwFlags );
         if( plan.nfft_flags & PRE_ONE_PSI )
@@ -263,6 +276,12 @@ void FinalizeCoilPlans()
         nfft_finalize( &::coilPlans[t] );
     ::coilPlans.clear();
     delete ::coilPaths;
+
+    fftw_destroy_plan( ::fftwBackward );
+    fftw_destroy_plan( ::fftwForward );
+    nfft_free( ::g2 );
+    nfft_free( ::g1 );
+
     ::initializedCoilPlans = false;
 }
 

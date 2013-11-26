@@ -1,4 +1,3 @@
-- Modify acquisition::Scatter to avoid sending/receiving redundant columns
-- Allow for user-specified and/or dynamic step sizes
+- Allow for user-specified and/or dynamic step sizes in L+S
 - Look into fftw_malloc to see how to force Elemental's (Dist)Matrix to choose
   leading dimensions which make each column's pointer compatible
