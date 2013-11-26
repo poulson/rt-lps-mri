@@ -63,8 +63,8 @@ Scatter
     const double redistTime = timer.Stop();
 
     if( progress && images.Grid().Rank() == 0 )
-        std::cout << "    Scatter copies: " << memCopyTime << " seconds\n"
-                  << "    Scatter redist: " << redistTime << " seconds"
+        std::cout << "      Scatter copies: " << memCopyTime << " seconds\n"
+                  << "      Scatter redist: " << redistTime << " seconds"
                   << std::endl;
 }
 
