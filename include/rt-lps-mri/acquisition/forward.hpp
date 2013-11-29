@@ -25,7 +25,7 @@ namespace mri {
 
 namespace acquisition {
 
-// TODO: Modify this routine to avoid sending and receiving redundant columns
+// TODO: Exploit redundancy in coil data to reduce amount of communication
 inline void
 Scatter
 ( const DistMatrix<Complex<double>,VC,STAR>& images,

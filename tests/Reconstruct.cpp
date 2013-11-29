@@ -44,6 +44,7 @@ main( int argc, char* argv[] )
             Input("--data","data filename",string("data.bin"));
         const bool print = Input("--print","print matrices?",false);
         const bool display = Input("--display","display matrices?",false);
+        const bool write = Input("--write","write matrices?",true);
         ProcessInput();
         PrintInputReport();
 
@@ -86,6 +87,13 @@ main( int argc, char* argv[] )
             Display( paths, "paths" );
             Display( data, "data" );
         }
+        if( write )
+        {
+            Write( densityComp, elem::PNG, "density" );
+            Write( sensitivity, elem::PNG, "sensitivity" );
+            Write( paths, elem::PNG, "paths" );
+            Write( data, elem::PNG, "data" );
+        }
 
         // Initialize acquisition operator and its adjoint
         mpi::Barrier( comm );
@@ -126,6 +134,11 @@ main( int argc, char* argv[] )
         {
             Display( L, "L" );
             Display( S, "S" );
+        }
+        if( write )
+        {
+            Write( L, elem::PNG, "L" );
+            Write( S, elem::PNG, "S" );
         }
     }
     catch( std::exception& e ) { ReportException(e); }

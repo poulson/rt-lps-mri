@@ -100,6 +100,7 @@ void Initialize( int& argc, char**& argv )
     {
         ::mriInitializedElemental = false;
     }
+    elem::SetColorMap( elem::GRAYSCALE );
 }
 
 void Finalize()
