@@ -35,5 +35,6 @@
 #include "rt-lps-mri/acquisition/adjoint.hpp"
 
 #include "rt-lps-mri/lps.hpp"
+#include "rt-lps-mri/write_lps.hpp"
 
 #endif // ifndef RTLPSMRI_HPP

@@ -42,11 +42,18 @@ main( int argc, char* argv[] )
             Input("--path","paths filename",string("paths.bin"));
         const string dataName = 
             Input("--data","data filename",string("data.bin"));
-        const bool print = Input("--print","print matrices?",false);
         const bool display = Input("--display","display matrices?",false);
         const bool write = Input("--write","write matrices?",true);
+#ifdef HAVE_QT5
+        const int formatInt = Input("--format","format to store matrices",5);
+#else
+        const int formatInt = Input("--format","format to store matrices",1);
+#endif
         ProcessInput();
         PrintInputReport();
+
+        const elem::FileFormat format = 
+            static_cast<elem::FileFormat>(formatInt);
 
         mpi::Barrier( comm );
         const double loadStart = mpi::Time();
@@ -73,13 +80,6 @@ main( int argc, char* argv[] )
             std::cout << "DONE. " << mpi::Time()-loadStart << " seconds" 
                       << std::endl;
 
-        if( print )
-        {
-            Print( densityComp, "density compensation" );
-            Print( sensitivity, "coil sensitivities" );
-            Print( paths, "paths" );
-            Print( data, "data" );
-        }
         if( display )
         {
             Display( densityComp, "density compensation" );
@@ -89,10 +89,10 @@ main( int argc, char* argv[] )
         }
         if( write )
         {
-            Write( densityComp, elem::PNG, "density" );
-            Write( sensitivity, elem::PNG, "sensitivity" );
-            Write( paths, elem::PNG, "paths" );
-            Write( data, elem::PNG, "data" );
+            Write( densityComp, format, "density" );
+            Write( sensitivity, format, "sensitivity" );
+            Write( paths, format, "paths" );
+            Write( data, format, "data" );
         }
 
         // Initialize acquisition operator and its adjoint
@@ -125,21 +125,9 @@ main( int argc, char* argv[] )
         if( commRank == 0 )
             std::cout << "DONE. " << mpi::Time()-startLPS << " seconds"
                       << std::endl;
-        if( print )
-        {
-            Print( L, "L" );
-            Print( S, "S" );
-        }
-        if( display )
-        {
-            Display( L, "L" );
-            Display( S, "S" );
-        }
+
         if( write )
-        {
-            Write( L, elem::PNG, "L" );
-            Write( S, elem::PNG, "S" );
-        }
+            WriteLPS( L, S, N0, N1, tv, format );
     }
     catch( std::exception& e ) { ReportException(e); }
 
