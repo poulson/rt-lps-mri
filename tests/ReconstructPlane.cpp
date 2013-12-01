@@ -16,11 +16,9 @@ main( int argc, char* argv[] )
     Initialize( argc, argv );
     mpi::Comm comm = mpi::COMM_WORLD;
     const int commRank = mpi::CommRank( comm );
-    const int commSize = mpi::CommSize( comm );
 
     try
     {
-        const int np = Input("--np","number of planes to process",38);
         const int nc = Input("--nc","number of coils",16);
         const int nt = Input("--nt","number of timesteps",10);
         const int N0 = Input("--N0","bandwidth in x direction",6);
@@ -42,8 +40,8 @@ main( int argc, char* argv[] )
             Input("--dens","density filename",string("density.bin"));
         const string pathsName = 
             Input("--path","paths filename",string("paths.bin"));
-        const string dataBase = 
-            Input("--data","data base filename",string("data"));
+        const string dataName = 
+            Input("--data","data filename",string("data.bin"));
         const bool display = Input("--display","display matrices?",false);
         const bool write = Input("--write","write matrices?",true);
 #ifdef HAVE_QT5
@@ -57,26 +55,47 @@ main( int argc, char* argv[] )
         const elem::FileFormat format = 
             static_cast<elem::FileFormat>(formatInt);
 
-        // Load and possibly display and write the plane-independent data
-        DistMatrix<double,STAR,STAR> paths, densityComp;
-        DistMatrix<Complex<double>,STAR,STAR> sensitivity;
-        LoadPaths( nnu, nt, pathsName, paths );
+        mpi::Barrier( comm );
+        const double loadStart = mpi::Time();
+        if( commRank == 0 )
+        {
+            std::cout << "Loading files...";
+            std::cout.flush();
+        }
+
+        DistMatrix<double,STAR,STAR> densityComp;
         LoadDensity( nnu, nt, densName, densityComp );
+
+        DistMatrix<Complex<double>,STAR,STAR> sensitivity;
         LoadSensitivity( N0, N1, nc, sensName, sensitivity );
+
+        DistMatrix<double,STAR,STAR> paths;
+        LoadPaths( nnu, nt, pathsName, paths );
+
+        DistMatrix<Complex<double>,STAR,VR> data;
+        LoadData( nnu, nc, nt, dataName, data );
+
+        mpi::Barrier( comm );
+        if( commRank == 0 )
+            std::cout << "DONE. " << mpi::Time()-loadStart << " seconds" 
+                      << std::endl;
+
         if( display )
         {
             Display( densityComp, "density compensation" );
             Display( sensitivity, "coil sensitivities" );
             Display( paths, "paths" );
+            Display( data, "data" );
         }
         if( write )
         {
             Write( densityComp, format, "density" );
             Write( sensitivity, format, "sensitivity" );
             Write( paths, format, "paths" );
+            Write( data, format, "data" );
         }
 
-        // Initialize the acquisition operator and its adjoint
+        // Initialize acquisition operator and its adjoint
         mpi::Barrier( comm );
         const double startInit = mpi::Time();
         if( commRank == 0 )
@@ -91,69 +110,24 @@ main( int argc, char* argv[] )
             std::cout << "DONE. " << mpi::Time()-startInit << " seconds"
                       << std::endl;
 
-        // Exploit the available trivial plane parallelism
-        const int numSeqRounds = np / commSize;
-        Grid selfGrid( mpi::COMM_SELF );
-        DistMatrix<Complex<double>,STAR,VR> data(selfGrid);
-        DistMatrix<Complex<double>,VC,STAR> L(selfGrid), S(selfGrid);
-        for( Int round=0; round<numSeqRounds; ++round )
+        mpi::Barrier( comm );
+        const double startLPS = mpi::Time();
+        if( commRank == 0 )
         {
-            const int plane = commRank + round*commSize;
-            std::ostringstream os, binOs;
-            os << dataBase << "-" << plane;
-            LoadData( nnu, nc, nt, os.str()+".bin", data );
-            if( display )
-                Display( data, os.str() );
-            if( write )
-                Write( data, format, os.str() );
-
-            LPS
-            ( data, L, S, tv, lambdaL, lambdaSRel, relTol, maxIts, tryTSQR, 
-              progress );
-            if( write )
-                WriteLPS( L, S, N0, N1, plane, tv, format );
+            std::cout << "Starting L+S decomposition...";
+            std::cout.flush();
         }
+        DistMatrix<Complex<double>,VC,STAR> L, S;
+        LPS
+        ( data, L, S, tv, lambdaL, lambdaSRel, relTol, maxIts, 
+          tryTSQR, progress );
+        mpi::Barrier( comm );
+        if( commRank == 0 )
+            std::cout << "DONE. " << mpi::Time()-startLPS << " seconds"
+                      << std::endl;
 
-        // Process the remaining planes using subteams
-        const int numSeqPlanes = numSeqRounds*commSize; 
-        const int numParPlanes = np - numSeqPlanes;
-        if( numParPlanes > 0 )
-        {
-            // Split the communicator
-            int color, key;
-            const int mainTeamSize = commSize / numParPlanes;
-            if( commRank < mainTeamSize*(numParPlanes-1) )
-            {
-                color = commRank / mainTeamSize;
-                key = commRank % mainTeamSize;
-            } 
-            else
-            {
-                color = numParPlanes-1;
-                key = commRank - mainTeamSize*(numParPlanes-1);
-            } 
-            mpi::Comm subComm;
-            mpi::CommSplit( comm, color, key, subComm );
-            Grid subGrid( subComm );
-            data.SetGrid( subGrid );
-            L.SetGrid( subGrid );
-            S.SetGrid( subGrid );
-
-            const int plane = numSeqPlanes + color;
-            std::ostringstream os, binOs;
-            os << dataBase << "-" << plane;
-            LoadData( nnu, nc, nt, os.str()+".bin", data );
-            if( display )
-                Display( data, os.str() );
-            if( write )
-                Write( data, format, os.str() );
-
-            LPS
-            ( data, L, S, tv, lambdaL, lambdaSRel, relTol, maxIts, tryTSQR, 
-              progress );
-            if( write )
-                WriteLPS( L, S, N0, N1, plane, tv, format );
-        }
+        if( write )
+            WriteLPS( L, S, N0, N1, 0, tv, format );
     }
     catch( std::exception& e ) { ReportException(e); }
 

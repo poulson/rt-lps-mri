@@ -15,7 +15,7 @@ inline void
 WriteLPS
 ( const DistMatrix<Complex<double>,VC,STAR>& L,
   const DistMatrix<Complex<double>,VC,STAR>& S,
-  Int N0, Int N1,
+  Int N0, Int N1, Int plane,
   bool tv=true,
   elem::FileFormat format=elem::MATLAB_ASCII )
 {
@@ -40,9 +40,9 @@ WriteLPS
 
         std::ostringstream os;
         if( tv )
-            os << "L-tv-" << t;
+            os << "L-" << plane << "-tv-" << t;
         else
-            os << "L-temporal-" << t;
+            os << "L-" << plane << "-temporal-" << t;
         Write( B, format, os.str() );
     }
     A_STAR_VR = S;
@@ -56,9 +56,9 @@ WriteLPS
 
         std::ostringstream os;
         if( tv )
-            os << "S-tv-" << t;
+            os << "S-" << plane << "-tv-" << t;
         else
-            os << "S-temporal-" << t;
+            os << "S-" << plane << "-temporal-" << t;
         Write( B, format, os.str() );
     }
 }

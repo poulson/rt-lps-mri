@@ -119,7 +119,8 @@ include_directories("${PROJECT_BINARY_DIR}/include")
 # Build the test drivers if necessary
 if(RTLPSMRI_TESTS)
   set(TEST_DIR ${PROJECT_SOURCE_DIR}/tests)
-  set(TESTS Acquisition CoilAwareNFFT NFFT Reconstruct TemporalFFT)
+  set(TESTS Acquisition CoilAwareNFFT NFFT Reconstruct ReconstructPlane 
+            TemporalFFT)
 
   # Build the tests
   set(OUTPUT_DIR "${PROJECT_BINARY_DIR}/bin/tests")
