@@ -58,11 +58,22 @@ main( int argc, char* argv[] )
             static_cast<elem::FileFormat>(formatInt);
 
         // Load and possibly display and write the plane-independent data
+        mpi::Barrier( comm );
+        if( commRank == 0 )
+        {
+            std::cout << "Loading plane-independent data...";     
+            std::cout.flush();
+        }
+        const double startLoad = mpi::Time();
         DistMatrix<double,STAR,STAR> paths, densityComp;
         DistMatrix<Complex<double>,STAR,STAR> sensitivity;
         LoadPaths( nnu, nt, pathsName, paths );
         LoadDensity( nnu, nt, densName, densityComp );
         LoadSensitivity( N0, N1, nc, sensName, sensitivity );
+        mpi::Barrier( comm );
+        if( commRank == 0 )
+            std::cout << "DONE. " << mpi::Time()-startLoad << " seconds" 
+                      << std::endl;
         if( display )
         {
             Display( densityComp, "density compensation" );
@@ -92,6 +103,10 @@ main( int argc, char* argv[] )
                       << std::endl;
 
         // Exploit the available trivial plane parallelism
+        mpi::Barrier( comm );
+        if( commRank == 0 )
+            std::cout << "Starting trivially parallel work..." << std::endl;
+        const double trivialStart = mpi::Time();
         const int numSeqRounds = np / commSize;
         Grid selfGrid( mpi::COMM_SELF );
         DistMatrix<Complex<double>,STAR,VR> data(selfGrid);
@@ -113,8 +128,16 @@ main( int argc, char* argv[] )
             if( write )
                 WriteLPS( L, S, N0, N1, plane, tv, format );
         }
+        mpi::Barrier( comm );
+        if( commRank == 0 )
+            std::cout << "Finished trivially parallel section: " 
+                      << mpi::Time()-trivialStart << " seconds" << std::endl;
 
         // Process the remaining planes using subteams
+        mpi::Barrier( comm );
+        if( commRank == 0 )
+            std::cout << "Starting parallel work..." << std::endl;
+        const double parallelStart = mpi::Time(); 
         const int numSeqPlanes = numSeqRounds*commSize; 
         const int numParPlanes = np - numSeqPlanes;
         if( numParPlanes > 0 )
@@ -148,12 +171,21 @@ main( int argc, char* argv[] )
             if( write )
                 Write( data, format, os.str() );
 
+            mpi::Barrier( comm );
+            const double lpsStart = mpi::Time();
             LPS
             ( data, L, S, tv, lambdaL, lambdaSRel, relTol, maxIts, tryTSQR, 
               progress );
+            mpi::Barrier( comm );
+            if( commRank == 0 )
+                std::cout << "  Parallel LPS's took " << mpi::Time()-lpsStart 
+                          << " seconds" << std::endl;
             if( write )
                 WriteLPS( L, S, N0, N1, plane, tv, format );
         }
+        if( commRank == 0 )
+            std::cout << "Finished parallel section: " 
+                      << mpi::Time()-parallelStart << " seconds" << std::endl;
     }
     catch( std::exception& e ) { ReportException(e); }
 
