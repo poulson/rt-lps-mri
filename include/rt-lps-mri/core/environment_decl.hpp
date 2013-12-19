@@ -25,6 +25,7 @@ using namespace elem::orientation_wrapper;
 using namespace elem::unit_or_non_unit_wrapper;
 using namespace elem::upper_or_lower_wrapper;
 using namespace elem::sort_type_wrapper;
+using namespace elem::file_format_wrapper;
 
 // For scalar operations
 using elem::Int;
@@ -52,7 +53,10 @@ using elem::Uniform;
 using elem::Sort;
 using elem::FrobeniusNorm;
 
-// Exception generation
+// Utilities
+using elem::Read;
+using elem::Write;
+using elem::FileSize;
 using elem::LogicError;
 using elem::RuntimeError;
 
@@ -89,26 +93,26 @@ T Input( std::string name, std::string desc, T defaultVal );
 void ProcessInput();
 void PrintInputReport();
 
-#ifndef RELEASE
-void PushCallStack( std::string s );
-void PopCallStack();
-void DumpCallStack();
+DEBUG_ONLY(
+    void PushCallStack( std::string s );
+    void PopCallStack();
+    void DumpCallStack();
 
-class CallStackEntry
-{
-public:
-    CallStackEntry( std::string s ) 
-    { 
-        if( !std::uncaught_exception() )
-            PushCallStack(s);
-    }
-    ~CallStackEntry() 
-    { 
-        if( !std::uncaught_exception() )
-            PopCallStack(); 
-    }
-};
-#endif
+    class CallStackEntry
+    {
+    public:
+        CallStackEntry( std::string s ) 
+        { 
+            if( !std::uncaught_exception() )
+                PushCallStack(s);
+        }
+        ~CallStackEntry() 
+        { 
+            if( !std::uncaught_exception() )
+                PopCallStack(); 
+        }
+    };
+)
 
 void ReportException( std::exception& e );
 

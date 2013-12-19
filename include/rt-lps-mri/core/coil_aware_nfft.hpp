@@ -18,23 +18,21 @@ CoilAwareNFFT2D
 ( const DistMatrix<Complex<double>,STAR,VR>& FHat, 
         DistMatrix<Complex<double>,STAR,VR>& F )
 {
-#ifndef RELEASE
-    CallStackEntry cse("CoilAwareNFFT2D");
-#endif
+    DEBUG_ONLY(CallStackEntry cse("CoilAwareNFFT2D"))
     const int width = FHat.Width();
     const int numNonUniform = NumNonUniformPoints();
     const int N0 = FirstBandwidth();
     const int N1 = SecondBandwidth();
     const int numCoils = NumCoils();
-#ifndef RELEASE
-    const int numTimesteps = NumTimesteps();
-    if( numCoils*numTimesteps != width )
-        LogicError("Invalid width");
-    if( N0 % 2 != 0 || N1 % 2 != 0 )
-        LogicError("NFFT requires band limits to be even integers\n");
-    if( FHat.Height() != N0*N1 )
-        LogicError("Invalid FHat height");
-#endif
+    DEBUG_ONLY(
+        const int numTimesteps = NumTimesteps();
+        if( numCoils*numTimesteps != width )
+            LogicError("Invalid width");
+        if( N0 % 2 != 0 || N1 % 2 != 0 )
+            LogicError("NFFT requires band limits to be even integers\n");
+        if( FHat.Height() != N0*N1 )
+            LogicError("Invalid FHat height");
+    )
     F.AlignWith( FHat );
     Zeros( F, numNonUniform, width );
     const int locWidth = F.LocalWidth();
@@ -59,23 +57,21 @@ CoilAwareAdjointNFFT2D
 ( const DistMatrix<Complex<double>,STAR,VR>& F,
         DistMatrix<Complex<double>,STAR,VR>& FHat )
 {
-#ifndef RELEASE
-    CallStackEntry cse("CoilAwareAdjointNFFT2D");
-#endif
+    DEBUG_ONLY(CallStackEntry cse("CoilAwareAdjointNFFT2D"))
     const int width = F.Width();
     const int N0 = FirstBandwidth();
     const int N1 = SecondBandwidth();
     const int numCoils = NumCoils();
-#ifndef RELEASE
-    const int numTimesteps = NumTimesteps();
-    const int numNonUniform = NumNonUniformPoints();
-    if( width != numCoils*numTimesteps )
-        LogicError("Invalid width");
-    if( N0 % 2 != 0 || N1 % 2 != 0 )
-        LogicError("NFFT requires band limits to be even integers\n");
-    if( F.Height() != numNonUniform )
-        LogicError("Invalid F height");
-#endif
+    DEBUG_ONLY(
+        const int numTimesteps = NumTimesteps();
+        const int numNonUniform = NumNonUniformPoints();
+        if( width != numCoils*numTimesteps )
+            LogicError("Invalid width");
+        if( N0 % 2 != 0 || N1 % 2 != 0 )
+            LogicError("NFFT requires band limits to be even integers\n");
+        if( F.Height() != numNonUniform )
+            LogicError("Invalid F height");
+    )
     FHat.AlignWith( F );
     Zeros( FHat, N0*N1, width );
     const int locWidth = F.LocalWidth();

@@ -18,21 +18,19 @@ NFT2D
   const DistMatrix<double,         STAR,VR>& paths,
         DistMatrix<Complex<double>,STAR,VR>& F )
 {
-#ifndef RELEASE
-    CallStackEntry cse("NFT2D");
-#endif
+    DEBUG_ONLY(CallStackEntry cse("NFT2D"))
     const double pi = 4*elem::Atan( 1. );
     const int width = paths.Width();
-#ifndef RELEASE
-    if( FHat.Height() != N0*N1 )
-        LogicError("Invalid FHat height");
-    if( paths.Height() != 2*numNonUniform )
-        LogicError("Invalid paths height");
-    if( FHat.Width() != paths.Width() )
-        LogicError("FHat and paths must have the same width");
-    if( FHat.RowAlign() != paths.RowAlign() )
-        LogicError("FHat and paths are not aligned");
-#endif
+    DEBUG_ONLY(
+        if( FHat.Height() != N0*N1 )
+            LogicError("Invalid FHat height");
+        if( paths.Height() != 2*numNonUniform )
+            LogicError("Invalid paths height");
+        if( FHat.Width() != paths.Width() )
+            LogicError("FHat and paths must have the same width");
+        if( FHat.RowAlign() != paths.RowAlign() )
+            LogicError("FHat and paths are not aligned");
+    )
     F.AlignWith( FHat );
     Zeros( F, numNonUniform, width );
     const int locWidth = F.LocalWidth();
@@ -71,21 +69,19 @@ AdjointNFT2D
   const DistMatrix<double,         STAR,VR>& paths,
         DistMatrix<Complex<double>,STAR,VR>& FHat )
 {
-#ifndef RELEASE
-    CallStackEntry cse("AdjointNFT2D");
-#endif
+    DEBUG_ONLY(CallStackEntry cse("AdjointNFT2D"))
     const double pi = 4*elem::Atan( 1. );
     const int width = paths.Width();
-#ifndef RELEASE
-    if( F.Height() != numNonUniform )
-        LogicError("Invalid F height");
-    if( paths.Height() != 2*numNonUniform )
-        LogicError("Invalid paths height");
-    if( F.Width() != paths.Width() )
-        LogicError("F and paths must have the same width");
-    if( F.RowAlign() != paths.RowAlign() )
-        LogicError("F and paths are not aligned");
-#endif
+    DEBUG_ONLY(
+        if( F.Height() != numNonUniform )
+            LogicError("Invalid F height");
+        if( paths.Height() != 2*numNonUniform )
+            LogicError("Invalid paths height");
+        if( F.Width() != paths.Width() )
+            LogicError("F and paths must have the same width");
+        if( F.RowAlign() != paths.RowAlign() )
+            LogicError("F and paths are not aligned");
+    )
     FHat.AlignWith( F );
     Zeros( FHat, N0*N1, width );
     const int locWidth = FHat.LocalWidth();

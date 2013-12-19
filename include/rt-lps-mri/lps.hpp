@@ -19,9 +19,7 @@ UpdateZ
   const DistMatrix<Complex<double>,VC,STAR>& S, 
         DistMatrix<Complex<double>,VC,STAR>& Z )
 {
-#ifndef RELEASE
-    CallStackEntry cse("lps::UpdateZ");
-#endif
+    DEBUG_ONLY(CallStackEntry cse("lps::UpdateZ"))
     const int numTimesteps = S.Width();
     const int localHeight = S.LocalHeight();
     for( int iLoc=0; iLoc<localHeight; ++iLoc )
@@ -45,9 +43,7 @@ SubtractAdjDz
 ( const DistMatrix<Complex<double>,VC,STAR>& Z,
         DistMatrix<Complex<double>,VC,STAR>& S )
 {
-#ifndef RELEASE
-    CallStackEntry cse("lps::SubtractAdjDz");
-#endif
+    DEBUG_ONLY(CallStackEntry cse("lps::SubtractAdjDz"))
     const int numTimesteps = S.Width();
     const int localHeight = S.LocalHeight();
     for( int iLoc=0; iLoc<localHeight; ++iLoc )
@@ -78,9 +74,7 @@ LPS
   double relTol=0.0025, int maxIts=100,
   bool tryTSQR=false, bool progress=true )
 {
-#ifndef RELEASE
-    CallStackEntry cse("LPS");
-#endif
+    DEBUG_ONLY(CallStackEntry cse("LPS"))
     using elem::Timer;
     typedef double Real;
     typedef Complex<Real> F;

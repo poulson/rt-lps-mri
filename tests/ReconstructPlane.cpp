@@ -52,6 +52,8 @@ main( int argc, char* argv[] )
         ProcessInput();
         PrintInputReport();
 
+        if( formatInt < 1 || formatInt >= FileFormat_MAX )
+            LogicError("Format integer must be in [1,",FileFormat_MAX,")");
         const elem::FileFormat format = 
             static_cast<elem::FileFormat>(formatInt);
 
@@ -89,10 +91,10 @@ main( int argc, char* argv[] )
         }
         if( write )
         {
-            Write( densityComp, format, "density" );
-            Write( sensitivity, format, "sensitivity" );
-            Write( paths, format, "paths" );
-            Write( data, format, "data" );
+            Write( densityComp, "density", format );
+            Write( sensitivity, "sensitivity", format );
+            Write( paths, "paths", format );
+            Write( data, "data", format );
         }
 
         // Initialize acquisition operator and its adjoint

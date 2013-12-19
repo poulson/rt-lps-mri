@@ -43,42 +43,44 @@ main( int argc, char* argv[] )
             Display( paths, "paths" );
             Display( FHat, "FHat" );
         }
+        const double frobFHatInit = FrobeniusNorm( FHat );
 
         NFFT2D( N0, N1, nnu, n0, n1, m, FHat, paths, F );
+        const double frobFHatAft = FrobeniusNorm( FHat );
         if( print )
             Print( F, "F after forward" );
         if( display )
             Display( F, "F after forward" );
-
         NFT2D( N0, N1, nnu, FHat, paths, FDirect );
         if( print )
             Print( FDirect, "F after direct forward" );
         if( display )
             Display( FDirect, "F after direct forward" );
+        const double frobFDir = FrobeniusNorm( FDirect );
+        Axpy( -1., F, FDirect );
+        const double frobE = FrobeniusNorm( FDirect );
 
         AdjointNFFT2D( N0, N1, nnu, n0, n1, m, F, paths, FHat );
         if( print )
             Print( FHat, "FHat after adjoint" );
         if( display )
             Display( FHat, "FHat after adjoint" );
-
         AdjointNFT2D( N0, N1, nnu, F, paths, FHatDirect );
         if( print )
             Print( FHatDirect, "FHat after direct adjoint" );
         if( display )
             Display( FHatDirect, "FHat after direct adjoint" );
-
-        const double frobFDir = FrobeniusNorm( FDirect );
         const double frobFHatDir = FrobeniusNorm( FHatDirect );
-        Axpy( -1., F, FDirect );
         Axpy( -1., FHat, FHatDirect );
-        const double frobE = FrobeniusNorm( FDirect );
         const double frobEHat = FrobeniusNorm( FHatDirect );
+
         if( mpi::WorldRank() == 0 )
         {
-            std::cout << "|| F ||_F = " << frobFDir << "\n"
-                      << "|| E ||_F = " << frobE << "\n"
-                      << "|| E ||_F / || F ||_F = " << frobE/frobFDir <<"\n"
+            std::cout << "|| FHat ||_F = " << frobFHatInit << " then "
+                                           << frobFHatAft << "\n"
+                      << "|| F    ||_F = " << frobFDir << "\n"
+                      << "|| E    ||_F = " << frobE << "\n"
+                      << "|| E    ||_F / || F ||_F = " << frobE/frobFDir <<"\n"
                       << "\n"
                       << "|| FHat ||_F = " << frobFHatDir << "\n"
                       << "|| EHat ||_F = " << frobEHat << "\n"

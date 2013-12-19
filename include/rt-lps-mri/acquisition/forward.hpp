@@ -32,9 +32,7 @@ Scatter
         DistMatrix<Complex<double>,STAR,VR>& scatteredImages,
   bool progress=false )
 {
-#ifndef RELEASE
-    CallStackEntry cse("acquisition::Scatter");
-#endif
+    DEBUG_ONLY(CallStackEntry cse("acquisition::Scatter"))
     const int height = images.Height();
     const int localHeight = images.LocalHeight();
     const int numCoils = NumCoils();
@@ -71,9 +69,7 @@ Scatter
 inline void
 ScaleBySensitivities( DistMatrix<Complex<double>,STAR,VR>& scatteredImages )
 {
-#ifndef RELEASE
-    CallStackEntry cse("acquisition::ScaleBySensitivities");
-#endif
+    DEBUG_ONLY(CallStackEntry cse("acquisition::ScaleBySensitivities"))
     const int numCoils = NumCoils();
     const int height = scatteredImages.Height();
     const int localWidth = scatteredImages.LocalWidth();
@@ -98,9 +94,7 @@ Acquisition
         DistMatrix<Complex<double>,STAR,VR>& F,
   bool progress=false )
 {
-#ifndef RELEASE
-    CallStackEntry cse("Acquisition");
-#endif
+    DEBUG_ONLY(CallStackEntry cse("Acquisition"))
     // Redundantly scatter image x time -> image x (coil,time)
     elem::Timer timer("");
     timer.Start();

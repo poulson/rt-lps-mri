@@ -16,21 +16,19 @@ CoilAwareNFT2D
 ( const DistMatrix<Complex<double>,STAR,VR>& FHat, 
         DistMatrix<Complex<double>,STAR,VR>& F )
 {
-#ifndef RELEASE
-    CallStackEntry cse("CoilAwareNFT2D");
-#endif
+    DEBUG_ONLY(CallStackEntry cse("CoilAwareNFT2D"))
     const double pi = 4*elem::Atan( 1. );
     const int width = FHat.Width();
     const int numNonUniform = NumNonUniformPoints();
     const int N0 = FirstBandwidth();
     const int N1 = SecondBandwidth();
     const int numCoils = NumCoils();
-#ifndef RELEASE
-    if( width != numCoils*NumTimesteps() )
-        LogicError("Invalid width");
-    if( FHat.Height() != N0*N1 )
-        LogicError("Invalid FHat height");
-#endif
+    DEBUG_ONLY(
+        if( width != numCoils*NumTimesteps() )
+            LogicError("Invalid width");
+        if( FHat.Height() != N0*N1 )
+            LogicError("Invalid FHat height");
+    )
     F.AlignWith( FHat );
     Zeros( F, numNonUniform, width );
     const int locWidth = F.LocalWidth();
@@ -72,21 +70,19 @@ CoilAwareAdjointNFT2D
 ( const DistMatrix<Complex<double>,STAR,VR>& F,
         DistMatrix<Complex<double>,STAR,VR>& FHat )
 {
-#ifndef RELEASE
-    CallStackEntry cse("CoilAwareAdjointNFT2D");
-#endif
+    DEBUG_ONLY(CallStackEntry cse("CoilAwareAdjointNFT2D"))
     const double pi = 4*elem::Atan( 1. );
     const int width = F.Width();
     const int numNonUniform = NumNonUniformPoints();
     const int N0 = FirstBandwidth();
     const int N1 = SecondBandwidth();
     const int numCoils = NumCoils();
-#ifndef RELEASE
-    if( width != numCoils*NumTimesteps() )
-        LogicError("Invalid width");
-    if( F.Height() != numNonUniform )
-        LogicError("Invalid F height");
-#endif
+    DEBUG_ONLY(
+        if( width != numCoils*NumTimesteps() )
+            LogicError("Invalid width");
+        if( F.Height() != numNonUniform )
+            LogicError("Invalid F height");
+    )
     FHat.AlignWith( F );
     Zeros( FHat, N0*N1, width );
     const int locWidth = F.LocalWidth();

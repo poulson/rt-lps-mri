@@ -21,9 +21,7 @@ ScaleByDensities
 ( const DistMatrix<Complex<double>,STAR,VR>& F,
         DistMatrix<Complex<double>,STAR,VR>& scaledF )
 {
-#ifndef RELEASE
-    CallStackEntry cse("acquisition::ScaleByDensities");
-#endif
+    DEBUG_ONLY(CallStackEntry cse("acquisition::ScaleByDensities"))
     const int numCoils = NumCoils();
     const int height = F.Height();
     const int localWidth = F.LocalWidth();
@@ -44,9 +42,7 @@ ScaleByDensities
 inline void
 ContractionPrescaling( DistMatrix<Complex<double>,STAR,VR>& FHat )
 {
-#ifndef RELEASE
-    CallStackEntry cse("acquisition::ContractionPrescaling");
-#endif
+    DEBUG_ONLY(CallStackEntry cse("acquisition::ContractionPrescaling"))
     const int numCoils = NumCoils();
     const int height = FHat.Height();
     const int localWidth = FHat.LocalWidth();
@@ -71,9 +67,7 @@ CoilContraction
         DistMatrix<Complex<double>,VC,STAR>& images,
   bool progress=false )
 {
-#ifndef RELEASE
-    CallStackEntry cse("acquisition::CoilContraction");
-#endif
+    DEBUG_ONLY(CallStackEntry cse("acquisition::CoilContraction"))
     typedef Complex<double> F;
     const int height = FHat.Height();
     const int numCoils = NumCoils();
@@ -114,9 +108,7 @@ AdjointAcquisition
         DistMatrix<Complex<double>,VC,STAR>& images, 
   bool progress=false )
 {
-#ifndef RELEASE
-    CallStackEntry cse("AdjointAcquisition");
-#endif
+    DEBUG_ONLY(CallStackEntry cse("AdjointAcquisition"))
     // Pre-scale the k-space data by the coil sensitivities
     elem::Timer timer("");
     timer.Start();

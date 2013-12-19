@@ -17,11 +17,9 @@ WriteLPS
   const DistMatrix<Complex<double>,VC,STAR>& S,
   Int N0, Int N1, Int plane,
   bool tv=true,
-  elem::FileFormat format=elem::MATLAB_ASCII )
+  FileFormat format=ASCII_MATLAB )
 {
-#ifndef RELEASE
-    CallStackEntry cse("WriteLPS");
-#endif
+    DEBUG_ONLY(CallStackEntry cse("WriteLPS"))
     Matrix<Complex<double>> B( N0, N1, N0 );
     Complex<double>* BBuf = B.Buffer();
 
@@ -43,7 +41,7 @@ WriteLPS
             os << "L-" << plane << "-tv-" << t;
         else
             os << "L-" << plane << "-temporal-" << t;
-        Write( B, format, os.str() );
+        Write( B, os.str(), format );
     }
     A_STAR_VR = S;
     for( Int tLoc=0; tLoc<localWidth; ++tLoc )
@@ -59,7 +57,7 @@ WriteLPS
             os << "S-" << plane << "-tv-" << t;
         else
             os << "S-" << plane << "-temporal-" << t;
-        Write( B, format, os.str() );
+        Write( B, os.str(), format );
     }
 }
 

@@ -18,11 +18,11 @@ namespace mri {
 inline void
 TemporalFFT( DistMatrix<Complex<double>,VC,STAR>& A )
 {
-#ifndef RELEASE
-    CallStackEntry cse("TemporalFFT");
-    if( A.Width() != NumTimesteps() )
-        LogicError("Wrong number of timesteps");
-#endif
+    DEBUG_ONLY(
+        CallStackEntry cse("TemporalFFT");
+        if( A.Width() != NumTimesteps() )
+            LogicError("Wrong number of timesteps");
+    )
     const int numTimesteps = A.Width();
     fftw_complex* buf = 
         (fftw_complex*)fftw_malloc(numTimesteps*sizeof(fftw_complex));
@@ -55,11 +55,11 @@ TemporalFFT( DistMatrix<Complex<double>,VC,STAR>& A )
 inline void
 TemporalAdjointFFT( DistMatrix<Complex<double>,VC,STAR>& A )
 {
-#ifndef RELEASE
-    CallStackEntry cse("TemporalAdjointFFT");
-    if( A.Width() != NumTimesteps() )
-        LogicError("Wrong number of timesteps");
-#endif
+    DEBUG_ONLY(
+        CallStackEntry cse("TemporalAdjointFFT");
+        if( A.Width() != NumTimesteps() )
+            LogicError("Wrong number of timesteps");
+    )
     const int numTimesteps = A.Width();
     fftw_complex* buf = 
         (fftw_complex*)fftw_malloc(numTimesteps*sizeof(fftw_complex));

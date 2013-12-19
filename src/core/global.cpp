@@ -12,9 +12,7 @@ namespace {
 bool mriInitializedElemental; 
 int numMriInits = 0;
 mri::Args* args = 0;
-#ifndef RELEASE
-std::stack<std::string> callStack;
-#endif
+DEBUG_ONLY(std::stack<std::string> callStack)
 
 bool initializedCoilPlans = false;
 int numCoils;
@@ -122,32 +120,31 @@ void Finalize()
     }
 }
 
-#ifndef RELEASE
-void PushCallStack( std::string s )
-{ ::callStack.push( s ); }
+DEBUG_ONLY(
+    void PushCallStack( std::string s )
+    { ::callStack.push( s ); }
 
-void PopCallStack()
-{ ::callStack.pop(); }
+    void PopCallStack()
+    { ::callStack.pop(); }
 
-void DumpCallStack()
-{
-    std::ostringstream msg;
-    while( !::callStack.empty() )
+    void DumpCallStack()
     {
-        msg << "[" << ::callStack.size() << "]: " << ::callStack.top() << "\n";
-        ::callStack.pop();
+        std::ostringstream msg;
+        while( !::callStack.empty() )
+        {
+            msg << "[" << ::callStack.size() << "]: " << ::callStack.top() 
+                << "\n";
+            ::callStack.pop();
+        }
+        std::cerr << msg.str();;
+        std::cerr.flush();
     }
-    std::cerr << msg.str();;
-    std::cerr.flush();
-}
-#endif // ifndef RELEASE
+)
 
 void ReportException( std::exception& e )
 {
     elem::ReportException( e );
-#ifndef RELEASE
-    DumpCallStack();
-#endif
+    DEBUG_ONLY(DumpCallStack())
 }
 
 Args& GetArgs()
@@ -169,11 +166,11 @@ void InitializeCoilPlans
 ( const DistMatrix<double,STAR,STAR>& X, 
   int numCoils, int N0, int N1, int n0, int n1, int m )
 {
-#ifndef RELEASE
-    CallStackEntry cse("InitializeCoilPlans");
-    if( InitializedCoilPlans() )
-        LogicError("Already initialized coil plans");
-#endif
+    DEBUG_ONLY(
+        CallStackEntry cse("InitializeCoilPlans");
+        if( InitializedCoilPlans() )
+            LogicError("Already initialized coil plans");
+    )
     const int dim = 2;
     const int numNonUniform = X.Height()/dim;
     const int numTimesteps = X.Width();
@@ -225,15 +222,15 @@ void InitializeAcquisition
   const DistMatrix<double,         STAR,STAR>& X, 
   int numCoils, int N0, int N1, int n0, int n1, int m )
 {
-#ifndef RELEASE
-    CallStackEntry cse("InitializeAcquisition");
-    if( InitializedAcquisition() )
-        LogicError("Already initialized acquisition operator");
-    if( sens.Height() != N0*N1 || sens.Width() != numCoils )
-        LogicError("Coil sensitivity matrix of the wrong size");
-    if( dens.Height() != X.Height()/2 || dens.Width() != X.Width() )
-        LogicError("Density composition matrix of the wrong size");
-#endif
+    DEBUG_ONLY(
+        CallStackEntry cse("InitializeAcquisition");
+        if( InitializedAcquisition() )
+            LogicError("Already initialized acquisition operator");
+        if( sens.Height() != N0*N1 || sens.Width() != numCoils )
+            LogicError("Coil sensitivity matrix of the wrong size");
+        if( dens.Height() != X.Height()/2 || dens.Width() != X.Width() )
+            LogicError("Density composition matrix of the wrong size");
+    )
     InitializeCoilPlans( X, numCoils, N0, N1, n0, n1, m );
 
     ::densityComp = new DistMatrix<double,STAR,STAR>( dens );
@@ -267,11 +264,11 @@ void InitializeAcquisition
 
 void FinalizeCoilPlans()
 {
-#ifndef RELEASE
-    CallStackEntry cse("FinalizeCoilPlans");
-    if( !InitializedCoilPlans() )
-        LogicError("Have not yet initialized coil plans");
-#endif
+    DEBUG_ONLY(
+        CallStackEntry cse("FinalizeCoilPlans");
+        if( !InitializedCoilPlans() )
+            LogicError("Have not yet initialized coil plans");
+    )
     const int numTimesteps = NumTimesteps();
     for( int t=0; t<numTimesteps; ++t )
         nfft_finalize( &::coilPlans[t] );
@@ -288,11 +285,11 @@ void FinalizeCoilPlans()
 
 void FinalizeAcquisition()
 {
-#ifndef RELEASE
-    CallStackEntry cse("FinalizeAcquisition");
-    if( !InitializedAcquisition() )
-        LogicError("Have not yet initialized acquisition operator");
-#endif
+    DEBUG_ONLY(
+        CallStackEntry cse("FinalizeAcquisition");
+        if( !InitializedAcquisition() )
+            LogicError("Have not yet initialized acquisition operator");
+    )
     ::initializedAcquisition = false;
     delete ::densityComp;
     delete ::sensitivity;
@@ -302,101 +299,101 @@ void FinalizeAcquisition()
 
 int NumCoils()
 {
-#ifndef RELEASE
-    CallStackEntry cse("NumCoils");
-    if( !InitializedCoilPlans() )
-        LogicError("Have not yet initialized coil plans");
-#endif
+    DEBUG_ONLY(
+        CallStackEntry cse("NumCoils");
+        if( !InitializedCoilPlans() )
+            LogicError("Have not yet initialized coil plans");
+    )
     return ::numCoils;
 }
 
 int NumTimesteps()
 {
-#ifndef RELEASE
-    CallStackEntry cse("NumTimesteps");
-    if( !InitializedCoilPlans() )
-        LogicError("Have not yet initialized coil plans");
-#endif
+    DEBUG_ONLY(
+        CallStackEntry cse("NumTimesteps");
+        if( !InitializedCoilPlans() )
+            LogicError("Have not yet initialized coil plans");
+    )
     return ::numTimesteps;
 }
 
 int NumNonUniformPoints()
 { 
-#ifndef RELEASE
-    CallStackEntry cse("NumNonUniformPoints");
-    if( !InitializedCoilPlans() )
-        LogicError("Have not yet initialized coil plans");
-#endif
+    DEBUG_ONLY(
+        CallStackEntry cse("NumNonUniformPoints");
+        if( !InitializedCoilPlans() )
+            LogicError("Have not yet initialized coil plans");
+    )
     return ::numNonUniformPoints; 
 }
 
 int FirstBandwidth()
 { 
-#ifndef RELEASE
-    CallStackEntry cse("FirstBandwidth");
-    if( !InitializedCoilPlans() )
-        LogicError("Have not yet initialized coil plans");
-#endif
+    DEBUG_ONLY(
+        CallStackEntry cse("FirstBandwidth");
+        if( !InitializedCoilPlans() )
+            LogicError("Have not yet initialized coil plans");
+    )
     return ::firstBandwidth; 
 }
 
 int SecondBandwidth()
 { 
-#ifndef RELEASE
-    CallStackEntry cse("SecondBandwidth");
-    if( !InitializedCoilPlans() )
-        LogicError("Have not yet initialized coil plans");
-#endif
+    DEBUG_ONLY(
+        CallStackEntry cse("SecondBandwidth");
+        if( !InitializedCoilPlans() )
+            LogicError("Have not yet initialized coil plans");
+    )
     return ::secondBandwidth; 
 }
 
 nfft_plan& CoilPlan( int path )
 { 
-#ifndef RELEASE
-    CallStackEntry cse("CoilPlan");
-    if( !InitializedCoilPlans() )
-        LogicError("Have not yet initialized coil plans");
-#endif
+    DEBUG_ONLY(
+        CallStackEntry cse("CoilPlan");
+        if( !InitializedCoilPlans() )
+            LogicError("Have not yet initialized coil plans");
+    )
     return ::coilPlans[path]; 
 }
 
 const DistMatrix<double,STAR,STAR>& CoilPaths()
 {
-#ifndef RELEASE
-    CallStackEntry cse("CoilPaths");
-    if( !InitializedCoilPlans() )
-        LogicError("Have not yet initialized coil plans");
-#endif
+    DEBUG_ONLY(
+        CallStackEntry cse("CoilPaths");
+        if( !InitializedCoilPlans() )
+            LogicError("Have not yet initialized coil plans");
+    )
     return *::coilPaths;
 }
 
 const DistMatrix<double,STAR,STAR>& DensityComp()
 {
-#ifndef RELEASE
-    CallStackEntry cse("DensityComp");
-    if( !InitializedAcquisition() )
-        LogicError("Have not yet initialized acquisition operator");
-#endif
+    DEBUG_ONLY(
+        CallStackEntry cse("DensityComp");
+        if( !InitializedAcquisition() )
+            LogicError("Have not yet initialized acquisition operator");
+    )
     return *::densityComp;
 }
 
 const DistMatrix<elem::Complex<double>,STAR,STAR>& Sensitivity()
 {
-#ifndef RELEASE
-    CallStackEntry cse("Sensitivity");
-    if( !InitializedAcquisition() )
-        LogicError("Have not yet initialized acquisition operator");
-#endif
+    DEBUG_ONLY(
+        CallStackEntry cse("Sensitivity");
+        if( !InitializedAcquisition() )
+            LogicError("Have not yet initialized acquisition operator");
+    )
     return *::sensitivity;
 }
 
 const DistMatrix<double,STAR,STAR>& SensitivityScalings()
 {
-#ifndef RELEASE
-    CallStackEntry cse("SensitivityScalings");
-    if( !InitializedAcquisition() )
-        LogicError("Have not yet initialized acquisition operator");
-#endif
+    DEBUG_ONLY(
+        CallStackEntry cse("SensitivityScalings");
+        if( !InitializedAcquisition() )
+            LogicError("Have not yet initialized acquisition operator");
+    )
     return *::sensitivityScalings;
 }
 

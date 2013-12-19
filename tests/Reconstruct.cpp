@@ -47,13 +47,15 @@ main( int argc, char* argv[] )
         const bool display = Input("--display","display matrices?",false);
         const bool write = Input("--write","write matrices?",true);
 #ifdef HAVE_QT5
-        const int formatInt = Input("--format","format to store matrices",5);
+        const int formatInt = Input("--format","format to store matrices",7);
 #else
         const int formatInt = Input("--format","format to store matrices",1);
 #endif
         ProcessInput();
         PrintInputReport();
 
+        if( formatInt < 1 || formatInt >= FileFormat_MAX )
+            LogicError("Format integer must be in [1,",FileFormat_MAX,")");
         const elem::FileFormat format = 
             static_cast<elem::FileFormat>(formatInt);
 
@@ -82,9 +84,9 @@ main( int argc, char* argv[] )
         }
         if( write )
         {
-            Write( densityComp, format, "density" );
-            Write( sensitivity, format, "sensitivity" );
-            Write( paths, format, "paths" );
+            Write( densityComp, "density", format );
+            Write( sensitivity, "sensitivity", format );
+            Write( paths, "paths", format );
         }
 
         // Initialize the acquisition operator and its adjoint
@@ -120,7 +122,7 @@ main( int argc, char* argv[] )
             if( display )
                 Display( data, os.str() );
             if( write )
-                Write( data, format, os.str() );
+                Write( data, os.str(), format );
 
             LPS
             ( data, L, S, tv, lambdaL, lambdaSRel, relTol, maxIts, tryTSQR, 
@@ -169,7 +171,7 @@ main( int argc, char* argv[] )
             if( display )
                 Display( data, os.str() );
             if( write )
-                Write( data, format, os.str() );
+                Write( data, os.str(), format );
 
             mpi::Barrier( comm );
             const double lpsStart = mpi::Time();
