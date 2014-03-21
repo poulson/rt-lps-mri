@@ -1,5 +1,5 @@
 The library is currently being configured on my laptop with:
-    cmake -D CMAKE_BUILD_TYPE=PureDebug -D NFFT_LIBS="/home/poulson/Install/lib/libnfft3.a;-lfftw3" -D MATH_LIBS="/home/poulson/Install/lib/libopenblas.a;-lgfortran;-lm;-lpthread" -D NFFT_INC_DIR=/home/poulson/Install/include ..
+    cmake -D CMAKE_BUILD_TYPE=PureDebug -D NFFT_LIBS="/home/poulson/Install/lib/libnfft3.a;-lfftw3" -D MATH_LIBS="/usr/lib/liblapack.a;/usr/lib/openblas-base/libopenblas.a;-lgfortran;-lm;-lpthread" -D NFFT_INC_DIR=/home/poulson/Install/include ..
 
 and on Stampede with:
     module swap intel gcc/4.7.1
