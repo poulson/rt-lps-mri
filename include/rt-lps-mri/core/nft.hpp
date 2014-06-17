@@ -19,7 +19,7 @@ NFT2D
         DistMatrix<Complex<double>,STAR,VR>& F )
 {
     DEBUG_ONLY(CallStackEntry cse("NFT2D"))
-    const double pi = 4*elem::Atan( 1. );
+    const double pi = 4*El::Atan( 1. );
     const int width = paths.Width();
     DEBUG_ONLY(
         if( FHat.Height() != N0*N1 )
@@ -70,7 +70,7 @@ AdjointNFT2D
         DistMatrix<Complex<double>,STAR,VR>& FHat )
 {
     DEBUG_ONLY(CallStackEntry cse("AdjointNFT2D"))
-    const double pi = 4*elem::Atan( 1. );
+    const double pi = 4*El::Atan( 1. );
     const int width = paths.Width();
     DEBUG_ONLY(
         if( F.Height() != numNonUniform )

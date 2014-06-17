@@ -17,7 +17,7 @@ CoilAwareNFT2D
         DistMatrix<Complex<double>,STAR,VR>& F )
 {
     DEBUG_ONLY(CallStackEntry cse("CoilAwareNFT2D"))
-    const double pi = 4*elem::Atan( 1. );
+    const double pi = 4*El::Atan( 1. );
     const int width = FHat.Width();
     const int numNonUniform = NumNonUniformPoints();
     const int N0 = FirstBandwidth();
@@ -71,7 +71,7 @@ CoilAwareAdjointNFT2D
         DistMatrix<Complex<double>,STAR,VR>& FHat )
 {
     DEBUG_ONLY(CallStackEntry cse("CoilAwareAdjointNFT2D"))
-    const double pi = 4*elem::Atan( 1. );
+    const double pi = 4*El::Atan( 1. );
     const int width = F.Width();
     const int numNonUniform = NumNonUniformPoints();
     const int N0 = FirstBandwidth();

@@ -22,13 +22,13 @@ int firstBandwidth;
 int secondBandwidth;
 fftw_plan fftwForward, fftwBackward;
 fftw_complex *g1, *g2;
-elem::DistMatrix<double,elem::STAR,elem::STAR>* coilPaths;
+El::DistMatrix<double,El::STAR,El::STAR>* coilPaths;
 std::vector<nfft_plan> coilPlans;
 
 bool initializedAcquisition = false;
-elem::DistMatrix<double,elem::STAR,elem::STAR>* densityComp;
-elem::DistMatrix<elem::Complex<double>,elem::STAR,elem::STAR>* sensitivity;
-elem::DistMatrix<double,elem::STAR,elem::STAR>* sensitivityScalings;
+El::DistMatrix<double,El::STAR,El::STAR>* densityComp;
+El::DistMatrix<El::Complex<double>,El::STAR,El::STAR>* sensitivity;
+El::DistMatrix<double,El::STAR,El::STAR>* sensitivityScalings;
 }
 
 namespace mri {
@@ -36,10 +36,10 @@ namespace mri {
 void PrintVersion( std::ostream& os )
 {
     os << "RT-LPS-MRI version information:\n"
-       << "  Git revision: " << GIT_SHA1 << "\n"
+       << "  Git revision: " << EL_GIT_SHA1 << "\n"
        << "  Version:      " << RTLPSMRI_VERSION_MAJOR << "."
                              << RTLPSMRI_VERSION_MINOR << "\n"
-       << "  Build type:   " << CMAKE_BUILD_TYPE << "\n"
+       << "  Build type:   " << EL_CMAKE_BUILD_TYPE << "\n"
        << std::endl;
 }
 
@@ -47,31 +47,31 @@ void PrintConfig( std::ostream& os )
 {
     os << "RT-LPS-MRI configuration:\n";
     os << "  NFFT_INC_DIR: " << NFFT_INC_DIR << "\n";
-    elem::PrintConfig( os );
+    El::PrintConfig( os );
 }
 
 void PrintCCompilerInfo( std::ostream& os )
 {
     os << "RT-LPS-MRI's C compiler info:\n"
-       << "  CMAKE_C_COMPILER:    " << CMAKE_C_COMPILER << "\n"
-       << "  MPI_C_COMPILER:      " << MPI_C_COMPILER << "\n"
-       << "  MPI_C_INCLUDE_PATH:  " << MPI_C_INCLUDE_PATH << "\n"
-       << "  MPI_C_COMPILE_FLAGS: " << MPI_C_COMPILE_FLAGS << "\n"
-       << "  MPI_C_LINK_FLAGS:    " << MPI_C_LINK_FLAGS << "\n"
-       << "  MPI_C_LIBRARIES:     " << MPI_C_LIBRARIES << "\n"
+       << "  CMAKE_C_COMPILER:    " << EL_CMAKE_C_COMPILER << "\n"
+       << "  MPI_C_COMPILER:      " << EL_MPI_C_COMPILER << "\n"
+       << "  MPI_C_INCLUDE_PATH:  " << EL_MPI_C_INCLUDE_PATH << "\n"
+       << "  MPI_C_COMPILE_FLAGS: " << EL_MPI_C_COMPILE_FLAGS << "\n"
+       << "  MPI_C_LINK_FLAGS:    " << EL_MPI_C_LINK_FLAGS << "\n"
+       << "  MPI_C_LIBRARIES:     " << EL_MPI_C_LIBRARIES << "\n"
        << std::endl;
 }
 
 void PrintCxxCompilerInfo( std::ostream& os )
 {
     os << "RT-LPS-MRI's C++ compiler info:\n"
-       << "  CMAKE_CXX_COMPILER:    " << CMAKE_CXX_COMPILER << "\n"
-       << "  CXX_FLAGS:             " << CXX_FLAGS << "\n"
-       << "  MPI_CXX_COMPILER:      " << MPI_CXX_COMPILER << "\n"
-       << "  MPI_CXX_INCLUDE_PATH:  " << MPI_CXX_INCLUDE_PATH << "\n"
-       << "  MPI_CXX_COMPILE_FLAGS: " << MPI_CXX_COMPILE_FLAGS << "\n"
-       << "  MPI_CXX_LINK_FLAGS:    " << MPI_CXX_LINK_FLAGS << "\n"
-       << "  MPI_CXX_LIBRARIES:     " << MPI_CXX_LIBRARIES << "\n"
+       << "  CMAKE_CXX_COMPILER:    " << EL_CMAKE_CXX_COMPILER << "\n"
+       << "  CXX_FLAGS:             " << EL_CXX_FLAGS << "\n"
+       << "  MPI_CXX_COMPILER:      " << EL_MPI_CXX_COMPILER << "\n"
+       << "  MPI_CXX_INCLUDE_PATH:  " << EL_MPI_CXX_INCLUDE_PATH << "\n"
+       << "  MPI_CXX_COMPILE_FLAGS: " << EL_MPI_CXX_COMPILE_FLAGS << "\n"
+       << "  MPI_CXX_LINK_FLAGS:    " << EL_MPI_CXX_LINK_FLAGS << "\n"
+       << "  MPI_CXX_LIBRARIES:     " << EL_MPI_CXX_LIBRARIES << "\n"
        << std::endl;
 }
 
@@ -89,16 +89,16 @@ void Initialize( int& argc, char**& argv )
 
     ::args = new Args( argc, argv );
     ::numMriInits = 1;
-    if( !elem::Initialized() )
+    if( !El::Initialized() )
     {
-        elem::Initialize( argc, argv );
+        El::Initialize( argc, argv );
         ::mriInitializedElemental = true;
     }
     else
     {
         ::mriInitializedElemental = false;
     }
-    elem::SetColorMap( elem::GRAYSCALE );
+    El::SetColorMap( El::GRAYSCALE );
 }
 
 void Finalize()
@@ -107,7 +107,7 @@ void Finalize()
         throw std::logic_error("Finalized RT-LPS-MRI more than initialized");
     --::numMriInits;
     if( ::mriInitializedElemental )
-        elem::Finalize();
+        El::Finalize();
 
     if( ::numMriInits == 0 )
     {
@@ -143,7 +143,7 @@ DEBUG_ONLY(
 
 void ReportException( std::exception& e )
 {
-    elem::ReportException( e );
+    El::ReportException( e );
     DEBUG_ONLY(DumpCallStack())
 }
 
@@ -377,7 +377,7 @@ const DistMatrix<double,STAR,STAR>& DensityComp()
     return *::densityComp;
 }
 
-const DistMatrix<elem::Complex<double>,STAR,STAR>& Sensitivity()
+const DistMatrix<El::Complex<double>,STAR,STAR>& Sensitivity()
 {
     DEBUG_ONLY(
         CallStackEntry cse("Sensitivity");

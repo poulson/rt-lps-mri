@@ -19,7 +19,7 @@ LoadData
     DEBUG_ONLY(CallStackEntry cse("LoadData"))
     const int m = numNonUniform;
     const int n = numCoils*numTimesteps;
-    elem::read::BinaryFlat( data, m, n, filename );
+    El::read::BinaryFlat( data, m, n, filename );
 }
 
 } // namespace mri

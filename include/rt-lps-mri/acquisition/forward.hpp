@@ -38,7 +38,7 @@ Scatter
     const int numCoils = NumCoils();
     const int numTimesteps = NumTimesteps();
 
-    elem::Timer timer("");
+    El::Timer timer("");
     timer.Start();
     DistMatrix<Complex<double>,VC,STAR> 
         scatteredImages_VC_STAR( images.Grid() );
@@ -49,7 +49,7 @@ Scatter
         for( int coil=0; coil<numCoils; ++coil )
         {
             const int jNew = coil + t*numCoils;
-            elem::MemCopy
+            El::MemCopy
             ( scatteredImages_VC_STAR.Buffer(0,jNew),
               images.LockedBuffer(0,t), localHeight ); 
         }
@@ -96,7 +96,7 @@ Acquisition
 {
     DEBUG_ONLY(CallStackEntry cse("Acquisition"))
     // Redundantly scatter image x time -> image x (coil,time)
-    elem::Timer timer("");
+    El::Timer timer("");
     timer.Start();
     DistMatrix<Complex<double>,STAR,VR> scatteredImages( images.Grid() );
     acquisition::Scatter( images, scatteredImages, progress );

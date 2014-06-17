@@ -95,7 +95,7 @@ set(RTLPSMRI_SRC "${RTLPSMRI_CPP};${RTLPSMRI_HEADERS}")
 
 # The main library
 add_library(rtlpsmri ${LIBRARY_TYPE} ${RTLPSMRI_SRC})
-target_link_libraries(rtlpsmri ${NFFT_LIBS} elemental)
+target_link_libraries(rtlpsmri ${NFFT_LIBS} El)
 install(TARGETS rtlpsmri DESTINATION lib)
 
 # Define the header-file preparation rules

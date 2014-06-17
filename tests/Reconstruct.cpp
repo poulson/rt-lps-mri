@@ -15,8 +15,8 @@ main( int argc, char* argv[] )
 {
     Initialize( argc, argv );
     mpi::Comm comm = mpi::COMM_WORLD;
-    const int commRank = mpi::CommRank( comm );
-    const int commSize = mpi::CommSize( comm );
+    const int commRank = mpi::Rank( comm );
+    const int commSize = mpi::Size( comm );
 
     try
     {
@@ -56,8 +56,7 @@ main( int argc, char* argv[] )
 
         if( formatInt < 1 || formatInt >= FileFormat_MAX )
             LogicError("Format integer must be in [1,",FileFormat_MAX,")");
-        const elem::FileFormat format = 
-            static_cast<elem::FileFormat>(formatInt);
+        const auto format = static_cast<El::FileFormat>(formatInt);
 
         // Load and possibly display and write the plane-independent data
         mpi::Barrier( comm );
@@ -158,7 +157,7 @@ main( int argc, char* argv[] )
                 key = commRank - mainTeamSize*(numParPlanes-1);
             } 
             mpi::Comm subComm;
-            mpi::CommSplit( comm, color, key, subComm );
+            mpi::Split( comm, color, key, subComm );
             Grid subGrid( subComm );
             data.SetGrid( subGrid );
             L.SetGrid( subGrid );

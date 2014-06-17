@@ -75,7 +75,7 @@ LPS
   bool tryTSQR=false, bool progress=true )
 {
     DEBUG_ONLY(CallStackEntry cse("LPS"))
-    using elem::Timer;
+    using El::Timer;
     typedef double Real;
     typedef Complex<Real> F;
 
@@ -141,9 +141,9 @@ LPS
         Axpy( F(-1), S, L );
         int rank;
         if( tryTSQR )
-            rank = elem::svt::TSQR( L, lambdaL, true );
+            rank = El::svt::TSQR( L, lambdaL, true );
         else 
-            rank = elem::svt::TallCross( L, lambdaL, true );
+            rank = El::svt::TallCross( L, lambdaL, true );
         const double svtTime = svt.Stop();
 
         // S := TransformedST(M-L)
@@ -161,7 +161,7 @@ LPS
         else
         {
             TemporalFFT( S );
-            elem::SoftThreshold( S, lambdaS );
+            El::SoftThreshold( S, lambdaS );
             if( progress )
                 numNonzeros = ZeroNorm( S );
             TemporalAdjointFFT( S );

@@ -73,7 +73,7 @@ CoilContraction
     const int numCoils = NumCoils();
     const int numTimesteps = NumTimesteps();
 
-    elem::Timer timer("");
+    El::Timer timer("");
     timer.Start();
     DistMatrix<Complex<double>,VC,STAR> FHat_VC_STAR( images.Grid() );
     FHat_VC_STAR.AlignWith( images ); 
@@ -110,7 +110,7 @@ AdjointAcquisition
 {
     DEBUG_ONLY(CallStackEntry cse("AdjointAcquisition"))
     // Pre-scale the k-space data by the coil sensitivities
-    elem::Timer timer("");
+    El::Timer timer("");
     timer.Start();
     DistMatrix<Complex<double>,STAR,VR> scaledF( F.Grid() );
     acquisition::ScaleByDensities( F, scaledF );

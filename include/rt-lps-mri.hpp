@@ -9,8 +9,7 @@
 #ifndef RTLPSMRI_HPP
 #define RTLPSMRI_HPP
 
-// TODO: Replace with elemental-lite.hpp and supporting routines
-#include "elemental.hpp"
+#include "El.hpp"
 
 #include "fftw3.h"
 #include "nfft3.h"

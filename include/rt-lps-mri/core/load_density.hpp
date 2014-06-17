@@ -19,7 +19,7 @@ LoadDensity
     DEBUG_ONLY(CallStackEntry cse("LoadDensity"))
     const int m = numNonUniform;
     const int n = numTimesteps;
-    elem::read::BinaryFlat( density, m, n, filename );
+    El::read::BinaryFlat( density, m, n, filename );
 }
 
 } // namespace mri
