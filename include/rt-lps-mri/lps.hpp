@@ -153,7 +153,7 @@ LPS
         Axpy( F(-1), L, S );
         if( tv )
         {
-            lps::UpdateZ( lambdaS/2, S, Z );
+            lps::UpdateZ( MaxNorm(M)*lambdaS/2, S, Z );
             lps::SubtractAdjDz( Z, S );
             if( progress )
                 numNonzeros = ZeroNorm( S );

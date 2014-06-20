@@ -52,6 +52,7 @@ using El::Length;
 using El::Uniform;
 using El::Sort;
 using El::FrobeniusNorm;
+using El::MaxNorm;
 
 // Utilities
 using El::Read;
