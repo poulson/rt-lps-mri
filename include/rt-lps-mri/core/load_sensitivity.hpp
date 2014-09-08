@@ -19,7 +19,8 @@ LoadSensitivity
     DEBUG_ONLY(CallStackEntry cse("LoadSensitivity"))
     const int m = N0*N1;
     const int n = numCoils;
-    El::read::BinaryFlat( sensitivity, m, n, filename );
+    sensitivity.Resize( m, n );
+    El::Read( sensitivity, filename, BINARY_FLAT );
 }
 
 } // namespace mri

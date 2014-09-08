@@ -19,7 +19,8 @@ LoadPaths
     DEBUG_ONLY(CallStackEntry cse("LoadPaths"))
     const int m = 2*numNonUniform;
     const int n = numTimesteps;
-    El::read::BinaryFlat( paths, m, n, filename );
+    paths.Resize( m, n );
+    El::Read( paths, filename, BINARY_FLAT );
 }
 
 } // namespace mri

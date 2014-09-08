@@ -143,7 +143,7 @@ LPS
         if( tryTSQR )
             rank = El::svt::TSQR( L, lambdaL, true );
         else 
-            rank = El::svt::TallCross( L, lambdaL, true );
+            rank = El::svt::Cross( L, lambdaL, true );
         const double svtTime = svt.Stop();
 
         // S := TransformedST(M-L)
